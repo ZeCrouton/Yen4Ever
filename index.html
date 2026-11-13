@@ -582,9 +582,15 @@ function render() {
   const mine = G.turn === 'p' && !G.over && !modalOpen;
   $('hand').className = 'hand' + (mine ? '' : ' off');
   const shown = selCard();
+  const oldRow = $('hand').querySelector('.handrow');
+  const keepLeft = oldRow ? oldRow.scrollLeft : 0;
   $('hand').innerHTML = `<div class="handrow">${G.hands.p.map(c =>
     cardHtml(c, symOf(c), 'big' + (c.id === sel ? ' sel' : ''), `data-hand="${c.id}"`)).join('') || '<span class="sm">Plus de cartes.</span>'}</div>` +
     `<div class="cardinfo">${shown ? cardInfo(shown) : ''}</div>`;
+  const newRow = $('hand').querySelector('.handrow');
+  newRow.scrollLeft = keepLeft;
+  const selEl = newRow.querySelector('.card.sel');
+  if (selEl) selEl.scrollIntoView({ block: 'nearest', inline: 'nearest' });
   $('b-pass').disabled = !mine;
   const sc = selCard();
   $('hint').textContent = !mine ? (G.over ? '' : 'L’adversaire réfléchit…') :
