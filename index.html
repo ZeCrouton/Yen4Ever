@@ -1,0 +1,789 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Yen4Ever</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya+Sans:wght@400;600;700&family=Cinzel:wght@500;700&display=swap">
+<style>
+/* Disposition : adversaire en haut, météo au centre, joueur en bas, main sous le plateau */
+:root{
+  --ink:#15110e; --panel:#1f1914; --panel2:#2a2119; --line:#4a3b2c;
+  --gold:#d1a84e; --bone:#eadfc8; --mute:#a89a82;
+  --blood:#c0503d; --frost:#7fa6bd; --siege:#9a8fd0; --good:#86b873;
+  --f-display:'Cinzel',Georgia,serif;
+  --f-body:'Alegreya Sans','Segoe UI',system-ui,sans-serif;
+  color-scheme:dark;
+}
+body{background:var(--ink);color:var(--bone);font:16px/1.35 var(--f-body);
+  padding-top:12px;padding-bottom:calc(170px + env(safe-area-inset-bottom,0px));
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));}
+#app{max-width:680px;margin:0 auto;display:flex;flex-direction:column;gap:10px}
+.top{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+h1{font:700 22px var(--f-display);letter-spacing:.1em;color:var(--gold);margin:0}
+h2{font:700 20px var(--f-display);letter-spacing:.06em;color:var(--gold);margin:0}
+.btn{font:600 14px var(--f-body);background:var(--panel2);color:var(--bone);border:1px solid var(--line);padding:8px 14px;border-radius:4px;cursor:pointer}
+.btn:hover{border-color:var(--gold)}
+.btn.primary{background:var(--gold);color:#1b140c;border-color:var(--gold)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn:focus-visible,.card:focus-visible,.horn:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.hud{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.pl{background:var(--panel);border:1px solid var(--line);padding:8px 10px;border-radius:4px;display:flex;justify-content:space-between;align-items:center;gap:8px;min-width:0}
+.pl.turn{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold) inset}
+.pl .nm{font:700 13px var(--f-display);letter-spacing:.05em}
+.pl .sm{font-size:12px;color:var(--mute)}
+.pl .tot{font:700 28px var(--f-display);font-variant-numeric:tabular-nums}
+.gem{display:inline-block;width:9px;height:9px;transform:rotate(45deg);background:var(--blood);margin:0 7px 0 2px}
+.gem.off{background:transparent;border:1px solid var(--mute)}
+.side{display:flex;flex-direction:column;gap:4px}
+.row{display:grid;grid-template-columns:36px 40px minmax(0,1fr);gap:6px;align-items:stretch;background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:4px;min-height:68px}
+.row.wx{background:linear-gradient(rgba(127,166,189,.2),rgba(127,166,189,.2)),var(--panel);border-color:var(--frost)}
+.rs{display:flex;flex-direction:column;align-items:center;justify-content:center;font:700 19px var(--f-display);font-variant-numeric:tabular-nums}
+.rs small{font:600 8px var(--f-body);color:var(--mute);letter-spacing:.06em;text-transform:uppercase}
+.horn{border:1px dashed var(--line);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--mute)}
+.horn.on{border:1px solid var(--gold);color:var(--gold);font:700 15px var(--f-display)}
+.target{outline:2px solid var(--gold);outline-offset:1px;cursor:pointer}
+.cards{display:flex;gap:4px;overflow-x:auto;align-items:center;min-width:0}
+.card{position:relative;overflow:hidden;flex:0 0 auto;width:44px;height:60px;background:var(--panel2);color:var(--bone);border:1px solid var(--line);border-top:3px solid var(--mute);border-radius:3px;padding:0;font:inherit;cursor:default}
+.card .art{position:absolute;inset:0}
+.card .art svg,.card .art img{position:absolute;inset:0;width:100%;height:100%;display:block}
+.card .art img{object-fit:cover;object-position:center 30%}
+.card .s{position:absolute;top:2px;left:2px;min-width:18px;height:18px;padding:0 2px;box-sizing:border-box;display:grid;place-items:center;background:rgba(21,17,14,.88);border:1px solid var(--gold);border-radius:9px;font:700 11px var(--f-display);line-height:1;font-variant-numeric:tabular-nums}
+.card .n{position:absolute;left:0;right:0;bottom:0;padding:8px 2px 12px;background:linear-gradient(transparent,rgba(0,0,0,.88));font-size:7px;line-height:1.05;text-align:center;color:var(--bone);overflow:hidden;max-height:34px}
+.card .sigs{position:absolute;left:0;right:0;bottom:1px;z-index:1;display:flex;justify-content:center;gap:2px;pointer-events:none}
+.card .sig{width:13px;height:13px;padding:2px;box-sizing:border-box;border-radius:50%;background:rgba(21,17,14,.92);border:1px solid var(--gold);color:var(--gold);display:grid;place-items:center}
+.card .sig svg{width:100%;height:100%;display:block}
+.card .t{display:none}
+.big{width:70px;height:100px}
+.big .s{min-width:26px;height:26px;border-radius:13px;font-size:14px;top:3px;left:3px}
+.big .n{font-size:10px;padding:12px 2px 19px;max-height:48px}
+.big .sigs{bottom:2px;gap:3px}
+.big .sig{width:19px;height:19px;padding:3px}
+.big .t{display:block;position:absolute;top:4px;right:3px;font-size:7px;letter-spacing:.05em;text-transform:uppercase;color:var(--gold);background:rgba(21,17,14,.8);padding:1px 3px;border-radius:2px}
+.card.hero{border-top-color:var(--gold);background:#2f2415}
+.card.close{border-top-color:var(--blood)}
+.card.ranged{border-top-color:var(--frost)}
+.card.siege{border-top-color:var(--siege)}
+.card.sp{border-top-color:var(--good)}
+.s.up{color:var(--good)}
+.s.down{color:var(--blood)}
+.hand{position:fixed;left:0;right:0;bottom:env(safe-area-inset-bottom,0px);z-index:5;display:flex;gap:6px;overflow-x:auto;padding:34px max(16px,env(safe-area-inset-right,0px)) 10px max(16px,env(safe-area-inset-left,0px));background:var(--ink);border-top:1px solid var(--line);box-shadow:0 -8px 16px rgba(0,0,0,.35)}
+.hand .card{cursor:pointer}
+.hand .card.sel{transform:scale(1.3);transform-origin:50% 100%;z-index:2;border-color:var(--gold);box-shadow:0 0 0 2px var(--gold),0 6px 14px rgba(0,0,0,.6)}
+.hand.off .card{opacity:.55;cursor:not-allowed}
+.grp{border-top:1px solid var(--line);padding:6px 0}
+.grp summary{cursor:pointer;font:700 14px var(--f-display);letter-spacing:.04em;color:var(--gold);padding:6px 2px;list-style:none}
+.grp summary::-webkit-details-marker{display:none}
+.grp summary::before{content:'▸ ';display:inline-block;transition:transform .15s}
+.grp[open] summary::before{content:'▾ '}
+.grpbody{padding:4px 2px 8px}
+.grpbody p{margin:0 0 6px}
+.sigtab{width:100%;border-collapse:collapse;font-size:14px}
+.sigtab td{border-top:1px solid var(--line);padding:6px 4px;vertical-align:top}
+.sigtab td:first-child{width:44px;white-space:nowrap}
+.sigtab .ico{width:18px;height:18px;color:var(--gold);margin-right:2px}
+.fac{display:flex;flex-direction:column;gap:8px}
+.fac .btn{text-align:left;padding:10px 14px}
+.fac small{font-weight:400;color:var(--mute)}
+.mull{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
+.mull .card.sel{border-color:var(--gold);transform:translateY(-6px);box-shadow:0 0 0 2px var(--gold)}
+.wxbar{text-align:center;font:600 12px var(--f-display);letter-spacing:.08em;color:var(--mute);padding:2px 0}
+.wxbar b{color:var(--frost)}
+.log{min-height:60px;background:var(--panel);border-left:3px solid var(--gold);padding:8px 10px;font-size:14px;display:flex;flex-direction:column;gap:2px}
+.log span:not(:last-child){color:var(--mute)}
+.ctl{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.tools{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap}
+.hint{font-size:13px;color:var(--gold);min-width:0}
+.modal{position:fixed;inset:0;background:rgba(10,8,6,.85);display:flex;align-items:center;justify-content:center;padding:16px;z-index:20}
+.box{background:var(--panel);border:1px solid var(--gold);max-width:440px;width:100%;padding:20px;border-radius:6px;display:flex;flex-direction:column;gap:12px;max-height:100%;overflow:auto}
+.box p,.box ul{margin:0}
+.box ul{padding-left:18px;display:flex;flex-direction:column;gap:4px;font-size:15px}
+.score{font:700 34px var(--f-display);text-align:center;font-variant-numeric:tabular-nums}
+@media (prefers-reduced-motion:no-preference){.card{transition:transform .12s}}
+</style>
+<div id="app">
+  <div class="top"><h1>Yen4Ever</h1></div>
+  <div class="hud" id="hud"></div>
+  <div class="side" id="side-e"></div>
+  <div class="wxbar" id="wx"></div>
+  <div class="side" id="side-p"></div>
+  <div class="log" id="log"></div>
+  <div class="ctl"><button class="btn primary" id="b-pass">Passer</button><span class="hint" id="hint"></span><span class="tools"><button class="btn" id="b-rules">Règles</button><button class="btn" id="b-mute" aria-pressed="false">Son : on</button><button class="btn" id="b-new">Nouvelle partie</button></span></div>
+  <div class="hand" id="hand"></div>
+</div>
+<div class="modal" id="modal" hidden></div>
+<script>
+/* ===== Logique du jeu ===== */
+const ROWS = ['close', 'ranged', 'siege'];
+const ROW_FR = { close: 'Mêlée', ranged: 'Distance', siege: 'Siège' };
+let UID = 1;
+
+const FAC = { nord: 'Royaumes du Nord', nilfgaard: 'Nilfgaard', skellige: 'Skellige' };
+const FAC_TXT = { nord: 'Pioche une carte si vous gagnez la première manche.', nilfgaard: 'Remporte la manche en cas d’égalité.', skellige: 'Berserkers et Mardroeme ; 2 unités reviennent au début de la manche 3.' };
+const randFac = () => Object.keys(FAC)[Math.floor(Math.random() * 3)];
+
+function makePool(faction) {
+  const L = [];
+  const add = (n, c) => { for (let i = 0; i < n; i++) L.push({ kind: 'unit', hero: false, ab: null, ...c, id: UID++ }); };
+  add(1, { name: 'Capitaine Aldric', str: 10, row: 'close', hero: true });
+  add(1, { name: 'Mage Vessa', str: 10, row: 'ranged', hero: true });
+  add(1, { name: 'Maître Ormund', str: 10, row: 'siege', hero: true });
+  add(3, { name: 'Hallebardier', str: 4, row: 'close', ab: 'bond' });
+  add(2, { name: 'Arbalétrier', str: 4, row: 'ranged', ab: 'bond' });
+  add(1, { name: 'Éclaireur', str: 1, row: 'close', ab: 'spy' });
+  add(1, { name: 'Infiltré', str: 2, row: 'ranged', ab: 'spy' });
+  add(1, { name: 'Guérisseuse', str: 2, row: 'close', ab: 'medic' });
+  add(1, { name: 'Apothicaire', str: 3, row: 'ranged', ab: 'medic' });
+  add(1, { name: 'Porte-étendard', str: 2, row: 'close', ab: 'morale' });
+  add(1, { name: 'Barde', str: 1, row: 'ranged', ab: 'morale' });
+  add(1, { name: 'Fantassin', str: 5, row: 'close' });
+  add(1, { name: 'Piquier', str: 6, row: 'close' });
+  add(1, { name: 'Cavalier', str: 7, row: 'close' });
+  add(1, { name: 'Archer', str: 5, row: 'ranged' });
+  add(1, { name: 'Catapulte', str: 8, row: 'siege' });
+  add(1, { name: 'Baliste', str: 6, row: 'siege' });
+  add(1, { name: 'Bélier', str: 5, row: 'siege' });
+  add(3, { name: 'Milicien', str: 3, row: 'close', ab: 'muster' });
+  add(2, { name: 'Voltigeur', str: 4, row: 'close', agile: true });
+  add(2, { name: 'Chasseur', str: 3, row: 'close', agile: true, ab: 'bond' });
+  add(1, { name: 'Émissaire', str: 7, row: 'ranged', hero: true, ab: 'spy' });
+  if (faction === 'skellige') {
+    add(2, { name: 'Berserker', str: 4, row: 'close', ab: 'berserk' });
+    add(1, { kind: 'mardroeme', name: 'Mardroeme' });
+  }
+  add(2, { kind: 'horn', name: 'Cor de guerre' });
+  add(1, { kind: 'scorch', name: 'Brasier' });
+  add(1, { kind: 'decoy', name: 'Leurre', str: 0 });
+  add(1, { kind: 'weather', name: 'Gel mordant', w: 'close' });
+  add(1, { kind: 'weather', name: 'Brouillard épais', w: 'ranged' });
+  add(1, { kind: 'weather', name: 'Pluie torrentielle', w: 'siege' });
+  add(1, { kind: 'weather', name: 'Ciel dégagé', w: 'clear' });
+  return L;
+}
+
+function shuffle(a) {
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+const emptyRows = () => ({ close: [], ranged: [], siege: [] });
+const emptyHorn = () => ({ close: null, ranged: null, siege: null });
+
+function newGame(fp, fe) {
+  const st = {
+    round: 1, lives: { p: 2, e: 2 },
+    hands: { p: [], e: [] },
+    faction: { p: fp, e: fe },
+    deck: { p: shuffle(makePool(fp)), e: shuffle(makePool(fe)) },
+    board: { p: emptyRows(), e: emptyRows() },
+    horn: { p: emptyHorn(), e: emptyHorn() },
+    grave: { p: [], e: [] },
+    weather: { close: false, ranged: false, siege: false },
+    passed: { p: false, e: false },
+    starter: Math.random() < 0.5 ? 'p' : 'e',
+    history: [], over: false, winner: null, logs: []
+  };
+  st.turn = st.starter;
+  drawCards(st, 'p', 10);
+  drawCards(st, 'e', 10);
+  return st;
+}
+
+function drawCards(st, side, n) {
+  for (let i = 0; i < n && st.deck[side].length; i++) st.hands[side].push(st.deck[side].pop());
+}
+
+/* Force d'une carte posée : météo, lien étroit, moral, puis cor. Les héros sont immunisés. */
+function cardStr(st, side, row, c) {
+  if (c.kind !== 'unit') return 0;
+  if (c.hero) return c.str;
+  const R = st.board[side][row];
+  let v = st.weather[row] ? 1 : c.str;
+  if (c.ab === 'bond') { const i = R.indexOf(c); if ([R[i - 1], R[i + 1]].some(x => x && x.ab === 'bond' && x.name === c.name)) v *= 2; }
+  v += R.filter(x => x.ab === 'morale' && x !== c).length;
+  if (st.horn[side][row]) v *= 2;
+  return v;
+}
+const rowScore = (st, side, row) => st.board[side][row].reduce((s, c) => s + cardStr(st, side, row, c), 0);
+const total = (st, side) => ROWS.reduce((s, r) => s + rowScore(st, side, r), 0);
+
+function bestGrave(st, side) {
+  const t = st.grave[side].filter(g => g.kind === 'unit' && !g.hero);
+  return t.length ? t.reduce((a, b) => (b.str > a.str ? b : a)) : null;
+}
+
+/* Joue une carte de la main. arg : rangée (cor), id de cible (leurre). Retourne un message. */
+function play(st, side, id, arg) {
+  const hand = st.hands[side];
+  const card = hand.splice(hand.findIndex(x => x.id === id), 1)[0];
+  const opp = side === 'p' ? 'e' : 'p';
+  const who = side === 'p' ? 'Vous jouez' : 'L’adversaire joue';
+  let msg = `${who} ${card.name}.`;
+  if (card.kind === 'unit') {
+    if (card.agile && arg) card.row = arg;
+    if (card.ab === 'spy') {
+      st.board[opp][card.row].push(card);
+      drawCards(st, side, 2);
+      msg += ' Espion : 2 cartes piochées.';
+    } else {
+      st.board[side][card.row].push(card);
+      if (card.ab === 'muster') {
+        const pull = [...st.hands[side], ...st.deck[side]].filter(x => x.name === card.name);
+        for (const x of pull) {
+          for (const src of [st.hands[side], st.deck[side]]) { const i = src.indexOf(x); if (i >= 0) src.splice(i, 1); }
+          st.board[side][x.row].push(x);
+        }
+        if (pull.length) msg += ` Sursaut : ${pull.length} carte(s) rejoignent le plateau.`;
+      }
+      if (card.ab === 'medic' && side === 'e') {
+        const t = bestGrave(st, side);
+        if (t) {
+          st.grave[side].splice(st.grave[side].indexOf(t), 1);
+          st.board[side][t.row].push(t);
+          msg += ` ${t.name} revient au combat.`;
+        }
+      }
+    }
+  } else if (card.kind === 'mardroeme') {
+    for (const r of ROWS) if (st.board[side][r].some(x => x.id === arg)) {
+      let n = 0;
+      st.board[side][r] = st.board[side][r].map(x => x.ab === 'berserk' ? (n++, { kind: 'unit', hero: false, ab: null, name: 'Ours de combat', str: 8, row: r, id: x.id }) : x);
+      msg += ` ${n} Berserker(s) se transforment en ours de combat.`;
+    }
+    st.grave[side].push(card);
+  } else if (card.kind === 'horn') {
+    st.horn[side][arg] = card;
+    msg += ` Rangée ${ROW_FR[arg]} doublée.`;
+  } else if (card.kind === 'scorch') {
+    const all = [];
+    for (const sd of ['p', 'e']) for (const r of ROWS) for (const c of st.board[sd][r])
+      if (c.kind === 'unit' && !c.hero) all.push({ sd, r, c, v: cardStr(st, sd, r, c) });
+    const mx = Math.max(0, ...all.map(x => x.v));
+    if (mx > 0) {
+      const dead = all.filter(x => x.v === mx);
+      for (const d of dead) {
+        st.board[d.sd][d.r].splice(st.board[d.sd][d.r].indexOf(d.c), 1);
+        st.grave[d.sd].push(d.c);
+      }
+      msg += ` ${dead.length} unité(s) de force ${mx} détruite(s).`;
+    }
+    st.grave[side].push(card);
+  } else if (card.kind === 'weather') {
+    if (card.w === 'clear') { for (const r of ROWS) st.weather[r] = false; }
+    else st.weather[card.w] = true;
+    st.grave[side].push(card);
+  } else if (card.kind === 'decoy') {
+    for (const r of ROWS) {
+      const i = st.board[side][r].findIndex(x => x.id === arg);
+      if (i >= 0) {
+        const t = st.board[side][r][i];
+        st.board[side][r][i] = card;
+        card.row = r;
+        hand.push(t);
+        msg += ` ${t.name} retourne en main.`;
+        break;
+      }
+    }
+  }
+  return msg;
+}
+
+function actions(st, side) {
+  const out = [];
+  for (const c of st.hands[side]) {
+    if (c.kind === 'horn') { for (const r of ROWS) if (!st.horn[side][r]) out.push({ id: c.id, card: c, arg: r }); }
+    else if (c.kind === 'mardroeme') {
+      for (const r of ROWS) for (const t of st.board[side][r]) if (t.ab === 'berserk') out.push({ id: c.id, card: c, arg: t.id });
+    } else if (c.agile) { for (const r of ['close', 'ranged']) out.push({ id: c.id, card: c, arg: r }); }
+    else if (c.kind === 'decoy') {
+      for (const r of ROWS) for (const t of st.board[side][r])
+        if (t.kind === 'unit' && !t.hero) out.push({ id: c.id, card: c, arg: t.id });
+    } else out.push({ id: c.id, card: c });
+  }
+  return out;
+}
+
+/* Fin de manche : points, vies. Le plateau reste visible jusqu'à clearRound. */
+function scoreRound(st) {
+  const tp = total(st, 'p'), te = total(st, 'e');
+  let w = tp > te ? 'p' : te > tp ? 'e' : null;
+  if (!w) {
+    const np = st.faction.p === 'nilfgaard', ne = st.faction.e === 'nilfgaard';
+    if (np && !ne) w = 'p'; else if (ne && !np) w = 'e';
+  }
+  if (w === 'p') st.lives.e--; else if (w === 'e') st.lives.p--; else { st.lives.p--; st.lives.e--; }
+  const rec = { n: st.round, tp, te, w };
+  st.history.push(rec);
+  return rec;
+}
+
+function clearRound(st, w) {
+  for (const sd of ['p', 'e']) {
+    for (const r of ROWS) {
+      st.grave[sd].push(...st.board[sd][r]);
+      st.board[sd][r] = [];
+      if (st.horn[sd][r]) { st.grave[sd].push(st.horn[sd][r]); st.horn[sd][r] = null; }
+    }
+  }
+  for (const r of ROWS) st.weather[r] = false;
+  if (w && st.round === 1 && st.faction[w] === 'nord') drawCards(st, w, 1); /* bonus Royaumes du Nord */
+  st.passed = { p: false, e: false };
+  st.round++;
+  if (st.round === 3) for (const sd of ['p', 'e']) if (st.faction[sd] === 'skellige') {
+    const pool = shuffle(st.grave[sd].filter(g => g.kind === 'unit' && !g.hero)).slice(0, 2);
+    for (const u of pool) { st.grave[sd].splice(st.grave[sd].indexOf(u), 1); st.board[sd][u.row].push(u); }
+    if (pool.length) st.logs.push(`${sd === 'p' ? 'Vos' : 'Ses'} unités de Skellige reviennent : ${pool.map(u => u.name).join(', ')}.`);
+  }
+  if (st.lives.p <= 0 || st.lives.e <= 0) {
+    st.over = true;
+    st.winner = st.lives.p > 0 ? 'p' : st.lives.e > 0 ? 'e' : 'draw';
+  } else {
+    st.starter = w || (st.starter === 'p' ? 'e' : 'p');
+    st.turn = st.starter;
+  }
+}
+
+/* ===== Adversaire ===== */
+function aiChoose(st) {
+  const A = actions(st, 'e');
+  if (!A.length) return null;
+  const d0 = total(st, 'e') - total(st, 'p');
+  const pPassed = st.passed.p;
+  if (pPassed && d0 > 0) return null;
+  const early = st.lives.e === 2 && st.lives.p === 2 && st.hands.e.length >= 6;
+  if (!pPassed && d0 >= (early ? 12 : 20)) return null;
+  let best = null, bs = -1e9;
+  for (const a of A) {
+    const t = JSON.parse(JSON.stringify(st));
+    play(t, 'e', a.id, a.arg);
+    const d = total(t, 'e') - total(t, 'p');
+    const gain = d - d0;
+    const cost = (a.card.kind === 'unit' ? a.card.str : 4) * (a.card.hero ? 1.2 : 0.5);
+    let sc;
+    if (pPassed) sc = d > 0 ? 100 - cost : gain - 50;
+    else sc = gain - cost * 0.6 + (a.card.ab === 'spy' ? 4 : 0);
+    if (sc > bs) { bs = sc; best = a; }
+  }
+  if (pPassed && bs < 0 && st.lives.e > 1) return null;
+  if (!pPassed && bs < -3 && d0 > 0) return null;
+  return best;
+}
+
+/* ===== Illustrations : silhouettes fantasy dessinées en SVG, une par carte ===== */
+const PAL = {
+  close: ['#2a100c', '#7a2c20'], ranged: ['#0f2233', '#2f5f7d'], siege: ['#1c1833', '#51497f'],
+  hero: ['#2e200a', '#9a7326'], sp: ['#10281a', '#3f7a4a'], wx: ['#12212f', '#4d7894']
+};
+const C = { steel: '#d7dde2', steel2: '#9aa6b0', gold: '#e0b54e', bone: '#eadfc8', wood: '#8a5a32', wood2: '#5a3a1e', red: '#c0503d', green: '#86b873', dark: '#17120e', blue: '#4a6fa5', violet: '#5b4a96', ice: '#d6f0ff', sky: '#7fd6ff' };
+const sk = (c, w) => `fill="none" stroke="${c}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"`;
+
+const ART_BODY = {
+  'Capitaine Aldric': `<path d="M8 64c2-12 12-16 24-16s22 4 24 16z" fill="${C.steel2}"/><path d="M32 14c9-9 18-6 15 4-4-3-9-3-15-1z" fill="${C.red}"/><path d="M19 46V28a13 13 0 0 1 26 0v18z" fill="${C.steel}"/><rect x="21" y="29" width="22" height="4" fill="${C.dark}"/><rect x="31" y="33" width="2" height="12" fill="${C.dark}"/>`,
+  'Mage Vessa': `<path d="M30 8L48 56H14z" fill="${C.violet}"/><ellipse cx="31" cy="30" rx="7" ry="9" fill="${C.dark}"/><circle cx="28" cy="30" r="1.6" fill="${C.sky}"/><circle cx="34" cy="30" r="1.6" fill="${C.sky}"/><rect x="50" y="14" width="3" height="46" fill="${C.wood}"/><circle cx="51.5" cy="12" r="6" fill="${C.sky}"/><circle cx="51.5" cy="12" r="9" fill="${C.sky}" opacity=".25"/>`,
+  'Maître Ormund': `<path d="M10 38h44l-8 7H37v9h9v5H18v-5h9v-9H18z" fill="${C.steel2}"/><g transform="rotate(32 32 24)"><rect x="30" y="8" width="4" height="30" fill="${C.wood}"/><rect x="21" y="6" width="22" height="10" fill="${C.steel}"/></g><circle cx="46" cy="30" r="2" fill="${C.gold}"/><circle cx="52" cy="36" r="1.5" fill="${C.gold}"/><circle cx="41" cy="24" r="1.5" fill="${C.gold}"/>`,
+  'Hallebardier': `<rect x="30" y="8" width="4" height="54" fill="${C.wood}"/><path d="M32 1l5 11h-10z" fill="${C.steel}"/><path d="M34 14c16 0 18 14 18 14s-10 3-18-3z" fill="${C.steel}"/><path d="M30 20c-6 0-9 4-9 4s4 3 9 1z" fill="${C.steel2}"/>`,
+  'Arbalétrier': `<path d="M6 24Q32 6 58 24" ${sk(C.wood, 5)}/><path d="M6 24L32 42 58 24" ${sk(C.bone, 1)}/><rect x="29" y="22" width="6" height="34" fill="${C.wood}"/><path d="M32 8l4 15h-8z" fill="${C.steel}"/>`,
+  'Éclaireur': `<path d="M32 6c-13 0-19 13-19 28v24h38V34C51 19 45 6 32 6z" fill="#2b3f2b"/><ellipse cx="32" cy="32" rx="10" ry="12" fill="#0b0b0b"/><circle cx="27.5" cy="31" r="1.8" fill="${C.gold}"/><circle cx="36.5" cy="31" r="1.8" fill="${C.gold}"/>`,
+  'Infiltré': `<path d="M12 26c8-8 32-8 40 0 0 12-8 22-20 22S12 38 12 26z" fill="${C.bone}"/><ellipse cx="24" cy="30" rx="4.5" ry="2.8" fill="${C.dark}"/><ellipse cx="40" cy="30" rx="4.5" ry="2.8" fill="${C.dark}"/><path d="M26 41q6 4 12 0" ${sk(C.red, 2.5)}/><path d="M50 6l-14 16" ${sk(C.steel, 3)}/>`,
+  'Guérisseuse': `<path d="M32 58C12 46 12 20 32 6c20 14 20 40 0 52z" fill="${C.green}"/><path d="M32 12V56M32 28l-9-7M32 38l10-8" ${sk(C.dark, 2)}/>`,
+  'Apothicaire': `<path d="M26 6h12v16l13 28a6 6 0 0 1-5 9H18a6 6 0 0 1-5-9l13-28z" fill="${C.ice}" opacity=".9"/><path d="M19 42h26l6 9a4 4 0 0 1-3 7H16a4 4 0 0 1-3-7z" fill="#6fcf7a"/><circle cx="28" cy="48" r="2" fill="${C.ice}"/><circle cx="36" cy="52" r="1.5" fill="${C.ice}"/>`,
+  'Porte-étendard': `<rect x="14" y="6" width="3" height="54" fill="${C.wood}"/><path d="M17 10h36l-9 13 9 13H17z" fill="${C.red}"/><circle cx="32" cy="23" r="6" fill="${C.gold}"/>`,
+  'Barde': `<ellipse cx="26" cy="43" rx="15" ry="13" fill="${C.wood}"/><circle cx="26" cy="43" r="4.5" fill="${C.dark}"/><path d="M36 34L53 11" ${sk(C.wood2, 5)}/><rect x="49" y="4" width="9" height="9" fill="${C.wood2}"/><path d="M20 38l24-14M22 44l26-16" ${sk(C.bone, 0.8)}/>`,
+  'Fantassin': `<path d="M12 14h36v20c0 14-10 22-18 26-8-4-18-12-18-26z" fill="${C.blue}"/><path d="M30 14v44M12 30h36" ${sk(C.gold, 4)}/><path d="M48 4l5 5-24 34-7 2 3-7z" fill="${C.steel}"/>`,
+  'Piquier': `<path d="M10 60L46 14" ${sk(C.wood, 4)}/><path d="M50 8l-10 4 6 8z" fill="${C.steel}"/><path d="M38 26l14 3-9 7z" fill="${C.red}"/><path d="M20 60L52 22" ${sk(C.wood2, 3)}/>`,
+  'Cavalier': `<path d="M16 54V30a15 15 0 0 1 30 0v24h-8V30a7 7 0 0 0-14 0v24z" fill="${C.steel}"/><path d="M6 60L56 8" ${sk(C.wood, 3)}/><path d="M44 20l14 2-8 8z" fill="${C.red}"/>`,
+  'Archer': `<path d="M18 6Q52 32 18 58" ${sk(C.wood, 4)}/><path d="M18 6V58" ${sk(C.bone, 1)}/><path d="M8 32H54" ${sk(C.wood2, 2)}/><path d="M58 32l-9-5v10z" fill="${C.steel}"/><path d="M8 32l-4-4M8 32l-4 4M13 32l-4-4M13 32l-4 4" ${sk(C.red, 1.5)}/>`,
+  'Catapulte': `<rect x="6" y="46" width="52" height="7" fill="${C.wood}"/><circle cx="16" cy="54" r="7" fill="${C.wood2}"/><circle cx="48" cy="54" r="7" fill="${C.wood2}"/><path d="M20 46L44 14" ${sk(C.wood, 5)}/><path d="M38 14h14l-3 8H41z" fill="${C.wood2}"/><circle cx="46" cy="10" r="6" fill="#8d8d8d"/>`,
+  'Baliste': `<path d="M4 22Q32 4 60 22" ${sk(C.wood, 5)}/><path d="M4 22L32 38 60 22" ${sk(C.bone, 1)}/><rect x="29" y="14" width="6" height="40" fill="${C.wood}"/><path d="M32 2l5 14h-10z" fill="${C.steel}"/><path d="M20 62l12-10 12 10" ${sk(C.wood2, 4)}/>`,
+  'Bélier': `<path d="M12 10v22M44 10v22M8 12h40" ${sk(C.wood2, 3)}/><rect x="6" y="32" width="42" height="13" rx="6" fill="${C.wood}"/><path d="M46 29h8l5 9-5 9h-8z" fill="${C.steel}"/><path d="M16 14v18M40 14v18" ${sk(C.bone, 1)}/>`,
+  'Milicien': `<circle cx="32" cy="22" r="9" fill="${C.bone}"/><path d="M14 58c0-16 8-24 18-24s18 8 18 24z" fill="${C.wood}"/><rect x="48" y="6" width="3" height="50" fill="${C.wood2}"/>`,
+  'Voltigeur': `<path d="M8 50L30 22l6 8 20-14-14 34z" fill="${C.green}"/><circle cx="30" cy="16" r="7" fill="${C.bone}"/><path d="M6 58h52" ${sk(C.wood2, 3)}/>`,
+  'Chasseur': `<path d="M12 56L32 10l20 46z" fill="#2b3f2b"/><path d="M8 30Q32 12 56 30" ${sk(C.wood, 4)}/><path d="M32 8v30" ${sk(C.steel, 2)}/>`,
+  'Émissaire': `<path d="M10 58c2-20 12-28 22-28s20 8 22 28z" fill="${C.violet}"/><circle cx="32" cy="20" r="9" fill="${C.bone}"/><path d="M20 12h24l-4-8H24z" fill="${C.gold}"/>`,
+  'Berserker': `<path d="M10 58c0-18 10-30 22-30s22 12 22 30z" fill="${C.red}"/><circle cx="32" cy="20" r="9" fill="${C.bone}"/><path d="M12 6l10 10M52 6L42 16" ${sk(C.steel, 3)}/>`,
+  'Ours de combat': `<circle cx="16" cy="14" r="6" fill="#5a3a1e"/><circle cx="48" cy="14" r="6" fill="#5a3a1e"/><circle cx="32" cy="32" r="20" fill="#7a4e2a"/><ellipse cx="32" cy="40" rx="9" ry="7" fill="${C.bone}"/><circle cx="25" cy="28" r="2.5" fill="${C.dark}"/><circle cx="39" cy="28" r="2.5" fill="${C.dark}"/>`,
+  'Mardroeme': `<path d="M32 60V22M32 40C20 40 12 32 12 18c14 0 20 8 20 22zM32 48c12 0 20-8 20-22-14 0-20 8-20 22z" fill="${C.green}" ${sk(C.green, 2)}/>`,
+  'Cor de guerre': `<path d="M8 48C12 30 28 20 46 22" ${sk(C.bone, 9)}/><path d="M42 12l17 7-8 17z" fill="${C.gold}"/><path d="M14 44l6-6" ${sk(C.gold, 3)}/>`,
+  'Brasier': `<path d="M32 4c4 13 17 17 17 33a17 17 0 0 1-34 0c0-9 4-13 9-17 0 6 4 9 7 9-2-11 0-17 1-25z" fill="#f08a2c"/><path d="M32 28c4 7 9 9 9 17a9 9 0 0 1-18 0c0-7 6-10 9-17z" fill="#ffd166"/>`,
+  'Leurre': `<rect x="30" y="16" width="4" height="44" fill="${C.wood}"/><rect x="8" y="30" width="48" height="4" fill="${C.wood}"/><circle cx="32" cy="16" r="9" fill="#c9a26a"/><path d="M21 12h22l-5-9H26z" fill="${C.wood2}"/><path d="M8 34l-3 8M16 34l-2 9M56 34l3 8M48 34l2 9" ${sk(C.gold, 1.5)}/><circle cx="29" cy="16" r="1.2" fill="${C.dark}"/><circle cx="35" cy="16" r="1.2" fill="${C.dark}"/>`,
+  'Gel mordant': `<path d="M32 6V58M9 19L55 45M9 45L55 19" ${sk(C.ice, 3.5)}/><path d="M26 10l6 6 6-6M26 54l6-6 6 6" ${sk(C.ice, 2.5)}/><circle cx="32" cy="32" r="4" fill="${C.ice}"/>`,
+  'Brouillard épais': `<path d="M6 20q9-8 18 0t18 0t16 0M4 32q9-8 18 0t18 0t20 0M8 44q9-8 18 0t18 0t14 0" ${sk(C.bone, 5)} opacity=".75"/>`,
+  'Pluie torrentielle': `<path d="M17 36a10 10 0 0 1 3-20 14 14 0 0 1 26 4 9 9 0 0 1 0 16z" fill="#9fb4c4"/><path d="M19 42l-4 9M29 42l-4 9M39 42l-4 9M47 42l-4 9M24 53l-4 9M34 53l-4 9M44 53l-4 9" ${sk(C.sky, 3)}/>`,
+  'Ciel dégagé': `<circle cx="32" cy="32" r="12" fill="${C.gold}"/><path d="M32 6v9M32 49v9M6 32h9M49 32h9M14 14l6 6M44 44l6 6M50 14l-6 6M20 44l-6 6" ${sk(C.gold, 3.5)}/>`
+};
+
+const ART_IMG = {"Milicien": "milicien", "Voltigeur": "voltigeur", "Chasseur": "chasseur", "Émissaire": "emissaire", "Berserker": "berserker", "Mardroeme": "mardroeme", "Ours de combat": "ours-de-combat", "Apothicaire": "apothicaire", "Arbalétrier": "arbaletrier", "Archer": "archer", "Baliste": "baliste", "Barde": "barde", "Brasier": "brasier", "Brouillard épais": "brouillard-epais", "Bélier": "belier", "Capitaine Aldric": "capitaine-aldric", "Catapulte": "catapulte", "Cavalier": "cavalier", "Ciel dégagé": "ciel-degage", "Cor de guerre": "cor-de-guerre", "Fantassin": "fantassin", "Gel mordant": "gel-mordant", "Guérisseuse": "guerisseuse", "Hallebardier": "hallebardier", "Infiltré": "infiltre", "Leurre": "leurre", "Mage Vessa": "mage-vessa", "Maître Ormund": "maitre-ormund", "Piquier": "piquier", "Pluie torrentielle": "pluie-torrentielle", "Porte-étendard": "porte-etendard", "Éclaireur": "eclaireur"};
+
+function artFor(c) {
+  const pal = c.hero ? PAL.hero : c.kind === 'unit' ? PAL[c.row] : c.kind === 'weather' ? PAL.wx : PAL.sp;
+  return `<svg viewBox="0 0 64 64" preserveAspectRatio="xMidYMid slice" aria-hidden="true">` +
+    `<rect width="64" height="64" fill="${pal[0]}"/><circle cx="32" cy="26" r="32" fill="${pal[1]}" opacity=".6"/>` +
+    `<rect y="44" width="64" height="20" fill="#000" opacity=".3"/>${ART_BODY[c.name] || ''}</svg>` +
+    (ART_IMG[c.name] ? `<img src="img/${ART_IMG[c.name]}.jpg" alt="" loading="lazy" draggable="false">` : '');
+}
+
+/* ===== Interface ===== */
+let G = newGame('nord', 'nilfgaard'), sel = null, modalOpen = false;
+const $ = id => document.getElementById(id);
+const ROW_ORDER = { e: ['siege', 'ranged', 'close'], p: ['close', 'ranged', 'siege'] };
+const AB = { bond: 'Lien', spy: 'Espion', medic: 'Médic', morale: 'Moral', muster: 'Sursaut', berserk: 'Berserker' };
+const KIND_TAG = { horn: 'Cor', scorch: 'Brasier', decoy: 'Leurre', weather: 'Météo', mardroeme: 'Mardroeme' };
+const tagOf = c => c.kind !== 'unit' ? KIND_TAG[c.kind] : [c.hero ? 'Héros' : '', c.ab ? AB[c.ab] : (c.hero ? '' : ROW_FR[c.row]), c.agile ? 'Agile' : ''].filter(Boolean).join('·');
+const symOf = c => c.kind === 'unit' ? c.str : c.kind === 'horn' ? '×2' : c.kind === 'scorch' ? '!!' : c.kind === 'decoy' ? '⇄' : c.kind === 'mardroeme' ? 'M' : c.w === 'clear' ? '0' : '=1';
+const selCard = () => G.hands.p.find(x => x.id === sel);
+
+/* Sigles en bas de carte (style Witcher 3) : rangée, capacité, type de carte ou héros */
+const SIG_SVG = {
+  close: '<path d="M8 1.5v9.5"/><path d="M5 10.5h6"/><path d="M8 11v3.5"/>',
+  ranged: '<path d="M4.5 1.5Q13 8 4.5 14.5"/><path d="M4.5 1.5v13"/>',
+  siege: '<circle cx="5" cy="12.5" r="2"/><circle cx="11" cy="12.5" r="2"/><path d="M2 10.5h12"/><path d="M5 10.5L11 3"/>',
+  bond: '<circle cx="6" cy="8" r="3.5"/><circle cx="10" cy="8" r="3.5"/>',
+  spy: '<path d="M1.5 8Q8 1.5 14.5 8Q8 14.5 1.5 8Z"/><circle cx="8" cy="8" r="2"/>',
+  medic: '<path d="M8 3v10M3 8h10" stroke-width="2.4"/>',
+  morale: '<path d="M4 14.5V1.5"/><path d="M4 2h9l-2 3 2 3H4"/>',
+  hero: '<path d="M8 1.5l1.9 4.3 4.6.4-3.5 3 1.1 4.6L8 11.3l-4.1 2.5 1.1-4.6-3.5-3 4.6-.4z"/>',
+  horn: '<path d="M2 6h3l7-3.5v11L5 10H2z"/>',
+  muster: '<circle cx="4" cy="11" r="2"/><circle cx="12" cy="11" r="2"/><circle cx="8" cy="5" r="2"/>',
+  agile: '<path d="M2 8h12M10 4l4 4-4 4M6 4L2 8l4 4"/>',
+  berserk: '<path d="M3 13L8 3l5 10M5 10h6"/>',
+  mardroeme: '<path d="M8 14V5M8 8C5 8 3 6 3 3c3 0 5 2 5 5zM8 10c3 0 5-2 5-5-3 0-5 2-5 5z"/>',
+  scorch: '<path d="M8 1.5c1 3 4 4.5 4 8.5a4 4 0 0 1-8 0c0-2 1-3 2-4 0 1.5 1 2 1.5 2C7.2 6 7.4 4 8 1.5z"/>',
+  decoy: '<circle cx="8" cy="5" r="3"/><path d="M8 8v7"/>',
+  frost: '<path d="M8 1.5v13M2.5 4.8l11 6.4M13.5 4.8l-11 6.4"/>',
+  fog: '<path d="M2 5h12M3 8h10M2 11h12"/>',
+  rain: '<path d="M8 1.5C6 5 4 7.5 4 10a4 4 0 0 0 8 0c0-2.5-2-5-4-8.5z"/>',
+  sun: '<circle cx="8" cy="8" r="3"/><path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2"/>'
+};
+const WX_SIG = { close: 'frost', ranged: 'fog', siege: 'rain', clear: 'sun' };
+function sigKeys(c) {
+  if (c.kind === 'weather') return [WX_SIG[c.w]];
+  if (c.kind !== 'unit') return [c.kind];
+  const k = [];
+  if (c.hero) k.push('hero');
+  k.push(c.ab || c.row);
+  if (c.agile) k.push('agile');
+  return k;
+}
+const sigHtml = c => `<span class="sigs" aria-hidden="true">${sigKeys(c).map(k => `<span class="sig"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">${SIG_SVG[k]}</svg></span>`).join('')}</span>`;
+
+function cardHtml(c, val, cls, attrs, vc) {
+  const k = c.kind === 'unit' ? c.row : 'sp';
+  return `<button class="card ${k} ${c.hero ? 'hero' : ''} ${cls || ''}" ${attrs || ''} title="${c.name}">` +
+    `<span class="art">${artFor(c)}</span>${sigHtml(c)}<span class="s ${vc || ''}">${val}</span><span class="n">${c.name}</span><span class="t">${tagOf(c)}</span></button>`;
+}
+
+/* Bruitage léger d'une carte posée (synthèse WebAudio, sans fichier). Coupé avec le bouton Son. */
+let actx = null;
+function sfxCard() {
+  if (muted) return;
+  try {
+    actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+    if (actx.state === 'suspended') actx.resume();
+    const t = actx.currentTime;
+    const out = actx.createGain();
+    out.gain.setValueAtTime(0.0001, t);
+    out.gain.exponentialRampToValueAtTime(0.13, t + 0.008);
+    out.gain.exponentialRampToValueAtTime(0.0001, t + 0.2);
+    out.connect(actx.destination);
+    const o = actx.createOscillator();
+    o.type = 'sine';
+    o.frequency.setValueAtTime(180, t);
+    o.frequency.exponentialRampToValueAtTime(85, t + 0.12);
+    o.connect(out);
+    o.start(t); o.stop(t + 0.2);
+    const len = Math.floor(actx.sampleRate * 0.07);
+    const buf = actx.createBuffer(1, len, actx.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len);
+    const src = actx.createBufferSource();
+    src.buffer = buf;
+    const bp = actx.createBiquadFilter();
+    bp.type = 'bandpass'; bp.frequency.value = 1400; bp.Q.value = 0.9;
+    const ng = actx.createGain();
+    ng.gain.value = 0.3;
+    src.connect(bp); bp.connect(ng); ng.connect(out);
+    src.start(t);
+  } catch (e) {}
+}
+
+function rowHtml(side, row) {
+  const sc = selCard();
+  const horn = G.horn[side][row];
+  const hornT = side === 'p' && sc && sc.kind === 'horn' && !horn;
+  const cards = G.board[side][row].map(c => {
+    const v = cardStr(G, side, row, c);
+    const vc = c.kind === 'unit' && !c.hero ? (v > c.str ? 'up' : v < c.str ? 'down' : '') : '';
+    const tgt = side === 'p' && sc && ((sc.kind === 'decoy' && c.kind === 'unit' && !c.hero) || (sc.kind === 'mardroeme' && c.ab === 'berserk'));
+    return cardHtml(c, v, tgt ? 'target' : '', `data-act="${sc && sc.kind === 'mardroeme' ? 'mard' : 'decoy'}" data-id="${c.id}"`, vc);
+  }).join('');
+  const agT = side === 'p' && sc && sc.agile && row !== 'siege';
+  return `<div class="row ${G.weather[row] ? 'wx' : ''} ${agT ? 'target' : ''}" ${side === 'p' ? `data-prow="${row}"` : ''}>` +
+    `<div class="rs">${rowScore(G, side, row)}<small>${ROW_FR[row]}</small></div>` +
+    `<div class="horn ${horn ? 'on' : ''} ${hornT ? 'target' : ''}" data-act="horn" data-side="${side}" data-row="${row}">${horn ? '×2' : 'Cor'}</div>` +
+    `<div class="cards">${cards}</div></div>`;
+}
+
+function gems(n) { return [0, 1].map(i => `<span class="gem ${i < n ? '' : 'off'}"></span>`).join(''); }
+function plHtml(side, name) {
+  return `<div class="pl ${G.turn === side && !G.over ? 'turn' : ''}"><div><div class="nm">${name}${G.passed[side] ? ' · passé' : ''}</div><div class="sm">${FAC[G.faction[side]]}</div>` +
+    `<div>${gems(G.lives[side])}<span class="sm">${G.hands[side].length} cartes</span></div></div>` +
+    `<div class="tot">${total(G, side)}</div></div>`;
+}
+
+function render() {
+  $('hud').innerHTML = plHtml('e', 'Adversaire') + plHtml('p', 'Vous');
+  $('side-e').innerHTML = ROW_ORDER.e.map(r => rowHtml('e', r)).join('');
+  $('side-p').innerHTML = ROW_ORDER.p.map(r => rowHtml('p', r)).join('');
+  const wxNames = { close: 'Gel mordant', ranged: 'Brouillard épais', siege: 'Pluie torrentielle' };
+  const act = ROWS.filter(r => G.weather[r]).map(r => `<b>${wxNames[r]}</b>`).join(' · ');
+  $('wx').innerHTML = `Manche ${Math.min(G.round, 3)} · ${act || 'Ciel dégagé'}`;
+  $('log').innerHTML = (G.logs.length ? G.logs : ['À vous de jouer.']).map(l => `<span>${l}</span>`).join('');
+  const mine = G.turn === 'p' && !G.over && !modalOpen;
+  $('hand').className = 'hand' + (mine ? '' : ' off');
+  $('hand').innerHTML = G.hands.p.map(c =>
+    cardHtml(c, symOf(c), 'big' + (c.id === sel ? ' sel' : ''), `data-hand="${c.id}"`)).join('') || '<span class="sm">Plus de cartes.</span>';
+  $('b-pass').disabled = !mine;
+  const sc = selCard();
+  $('hint').textContent = !mine ? (G.over ? '' : 'L’adversaire réfléchit…') :
+    sc && sc.kind === 'horn' ? 'Touchez l’emplacement Cor d’une de vos rangées.' :
+    sc && sc.kind === 'decoy' ? 'Touchez une de vos unités pour la reprendre en main.' :
+    sc && sc.kind === 'mardroeme' ? 'Touchez un de vos Berserkers sur le plateau.' :
+    sc && sc.agile ? 'Touchez la rangée Mêlée ou Distance.' : sc ? 'Touchez à nouveau la carte pour la jouer.' : 'Touchez une carte pour la jouer.';
+}
+
+function pushLog(m) { G.logs.push(m); if (G.logs.length > 3) G.logs.shift(); }
+
+function showModal(html) {
+  modalOpen = true;
+  $('modal').innerHTML = `<div class="box">${html}</div>`;
+  $('modal').hidden = false;
+}
+function hideModal() { modalOpen = false; $('modal').hidden = true; }
+
+function humanPlay(id, arg) {
+  const card = G.hands.p.find(x => x.id === id);
+  pushLog(play(G, 'p', id, arg));
+  sfxCard();
+  if (card && card.ab === 'medic' && medicTargets().length) return pickMedic();
+  afterAction();
+}
+
+/* Médic joueur : le joueur choisit l'unité relevée (hors Héros et spéciales) */
+const medicTargets = () => G.grave.p.filter(g => g.kind === 'unit' && !g.hero);
+function pickMedic() {
+  showModal(`<h2>Médic</h2><p>Choisissez une unité de votre défausse à relever sur le plateau.</p>` +
+    `<div class="mull">${medicTargets().map(c => cardHtml(c, c.str, '', `data-revive="${c.id}"`)).join('')}</div>`);
+  render();
+}
+
+function afterAction() {
+  const s = G;
+  for (const sd of ['p', 'e']) if (!s.passed[sd] && !s.hands[sd].length) {
+    s.passed[sd] = true;
+    pushLog(sd === 'p' ? 'Vous n’avez plus de cartes : vous passez.' : 'L’adversaire n’a plus de cartes et passe.');
+  }
+  if (s.passed.p && s.passed.e) { render(); return finishRound(); }
+  const other = s.turn === 'p' ? 'e' : 'p';
+  if (!s.passed[other]) s.turn = other;
+  render();
+  if (s.turn === 'e') setTimeout(aiMove, 900);
+}
+
+function aiMove() {
+  if (G.over || G.turn !== 'e' || modalOpen) return;
+  const a = aiChoose(G);
+  if (a) { pushLog(play(G, 'e', a.id, a.arg)); sfxCard(); }
+  else { G.passed.e = true; pushLog('L’adversaire passe.'); }
+  afterAction();
+}
+
+function finishRound() {
+  const rec = scoreRound(G);
+  const res = rec.tp === rec.te && rec.w ? 'Égalité : Nilfgaard remporte la manche.' : rec.w === 'p' ? 'Vous remportez la manche.' : rec.w === 'e' ? 'L’adversaire remporte la manche.' : 'Égalité : chacun perd une vie.';
+  render();
+  showModal(`<h2>Manche ${rec.n}</h2><p class="score">${rec.tp} — ${rec.te}</p><p>${res}${rec.w && rec.n === 1 && G.faction[rec.w] === 'nord' ? ' Royaumes du Nord : une carte est piochée.' : ''}</p><button class="btn primary" id="m-ok">Continuer</button>`);
+  $('m-ok').onclick = () => {
+    clearRound(G, rec.w);
+    sel = null;
+    if (G.over) {
+      const t = G.winner === 'p' ? 'Victoire !' : G.winner === 'e' ? 'Défaite' : 'Égalité';
+      const d = G.history.map(h => `Manche ${h.n} : ${h.tp} — ${h.te}`).join('<br>');
+      showModal(`<h2>${t}</h2><p>${d}</p><button class="btn primary" id="m-new">Rejouer</button>`);
+      $('m-new').onclick = restart;
+      render();
+    } else {
+      hideModal(); render();
+      if (G.turn === 'e') setTimeout(aiMove, 700);
+    }
+  };
+}
+
+const ico = k => `<svg class="ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">${SIG_SVG[k]}</svg>`;
+const SIG_ROWS = [
+  [['close'], 'Mêlée (épée)', 'Combat au corps-à-corps. Bordure rouge.', 'Fantassin, Piquier, Cavalier'],
+  [['ranged'], 'Distance (arc)', 'Combat à distance. Bordure bleue.', 'Archer, Arbalétrier, Apothicaire'],
+  [['siege'], 'Siège (catapulte)', 'Engins de siège. Bordure violette.', 'Catapulte, Baliste, Bélier'],
+  [['bond'], 'Lien (deux cercles)', 'Deux cartes identiques côte à côte : force doublée pour chacune.', 'Hallebardier, Arbalétrier'],
+  [['spy'], 'Espion (œil)', 'Posé chez l’adversaire ; sa force compte pour lui ; vous piochez 2 cartes.', 'Éclaireur, Infiltré, Émissaire'],
+  [['medic'], 'Médic (croix)', 'Relève une unité de votre défausse (hors Héros et spéciales).', 'Guérisseuse, Apothicaire'],
+  [['morale'], 'Moral (étendard)', '+1 aux autres unités de sa rangée.', 'Porte-étendard, Barde'],
+  [['muster'], 'Sursaut (trois cercles)', 'Pose aussitôt toutes les cartes du même nom (main et deck).', 'Milicien'],
+  [['agile'], 'Agile (flèches)', 'Se place au choix en Mêlée ou en Distance.', 'Voltigeur, Chasseur'],
+  [['hero'], 'Héros (étoile)', 'Force fixe ; immunisé météo, cor, brasier et capacités adverses. Cadre doré.', 'Capitaine Aldric, Mage Vessa, Maître Ormund, Émissaire'],
+  [['berserk'], 'Berserker (hache)', 'Transformé en ours de combat (force 8) par le Mardroeme.', 'Berserker'],
+  [['mardroeme'], 'Mardroeme (rune)', 'Transforme les Berserkers de la rangée choisie.', 'Mardroeme'],
+  [['horn'], 'Cor de guerre (cor)', 'Double la force d’une rangée.', 'Cor de guerre'],
+  [['scorch'], 'Brasier (flamme)', 'Détruit les unités les plus fortes du plateau.', 'Brasier'],
+  [['decoy'], 'Leurre (bûche)', 'Reprend une de vos unités en main.', 'Leurre'],
+  [['frost'], 'Gel mordant (flocon)', 'Ramène la force de la Mêlée à 1 pour les deux camps.', 'Gel mordant'],
+  [['fog'], 'Brouillard épais (lignes)', 'Ramène la force de la Distance à 1.', 'Brouillard épais'],
+  [['rain'], 'Pluie torrentielle (goutte)', 'Ramène la force du Siège à 1.', 'Pluie torrentielle'],
+  [['sun'], 'Ciel dégagé (soleil)', 'Annule toutes les cartes météo.', 'Ciel dégagé'],
+];
+const sigTab = keys => `<table class="sigtab"><tbody>` + SIG_ROWS.filter(r => keys.includes(r[0][0])).map(([k, n, d, ex]) =>
+  `<tr><td>${k.map(ico).join('')}</td><td><b>${n}</b><br>${d}<br><i>Exemples : ${ex}</i></td></tr>`).join('') + `</tbody></table>`;
+const grp = (title, html) => `<details class="grp"><summary>${title}</summary><div class="grpbody">${html}</div></details>`;
+const RULES = `<h2>Règles</h2>` +
+grp('Déroulement du match', `<ul>
+<li><b>Match</b> : deux manches gagnées sur trois. Chaque joueur a deux vies ; une manche perdue en coûte une, l’égalité en coûte une à chacun (sauf Nilfgaard, qui remporte l’égalité).</li>
+<li><b>Deck</b> : au moins 22 unités, au plus 10 cartes spéciales et 4 Héros. Main de départ de 10 cartes ; avant le premier round, changez jusqu’à deux cartes.</li>
+<li><b>Tour</b> : jouez exactement une carte ou passez. Les forces de chaque rangée s’additionnent ; le plus grand total l’emporte. Aucune pioche automatique aux manches 2 et 3.</li>
+<li><b>Force</b> : le chiffre en haut à gauche de chaque carte est sa force.</li></ul>`) +
+grp('Rangées : Mêlée, Distance, Siège', `<p>Chaque carte d’unité se joue dans une rangée, indiquée par son sigle et la couleur de sa bordure.</p>${sigTab(['close','ranged','siege'])}`) +
+grp('Capacités des unités', `<p>Ces capacités se déclenchent quand la carte est posée ou tant qu’elle est sur le plateau.</p>${sigTab(['bond','morale','spy','medic','muster','agile','hero'])}`) +
+grp('Skellige : Berserkers et Mardroeme', `<p>Les Berserkers sont des unités ordinaires. Le Mardroeme les transforme en ours de combat de force 8 dans la rangée choisie.</p>${sigTab(['berserk','mardroeme'])}`) +
+grp('Cartes spéciales : cor, brasier, leurre', `<p>Le cor reste sur sa rangée jusqu’à la fin de la manche. Le brasier et la météo vont à la défausse après leur effet. Le leurre prend la place de l’unité qu’il reprend.</p>${sigTab(['horn','scorch','decoy'])}`) +
+grp('Météo', `<p>Une carte météo ramène la force de sa rangée à 1 pour les deux camps. Le ciel dégagé annule toute la météo.</p>${sigTab(['frost','fog','rain','sun'])}`) +
+grp('Factions', `<ul>
+<li><b>Royaumes du Nord</b> : pioche une carte si vous gagnez la première manche.</li>
+<li><b>Nilfgaard</b> : remporte la manche en cas d’égalité.</li>
+<li><b>Skellige</b> : joue les Berserkers et le Mardroeme ; 2 unités de la défausse reviennent au début de la manche 3.</li></ul>`) +
+`<p class="hint">Touchez un titre pour l’ouvrir.</p>`;
+
+/* Relance : jusqu'à deux cartes changées avant le premier round */
+let mullSel = [];
+function intro() {
+  mullSel = [];
+  const hand = G.hands.p.map(c => cardHtml(c, symOf(c), 'big', `data-mull="${c.id}"`)).join('');
+  showModal(`${RULES}<p>${G.starter === 'p' ? 'Vous commencez.' : 'L’adversaire commence.'}</p>` +
+    `<p>Relance : touchez jusqu’à deux cartes à changer, puis commencez.</p><div class="mull">${hand}</div>` +
+    `<button class="btn primary" id="m-go">Commencer</button>`);
+  $('m-go').onclick = () => {
+    for (const id of mullSel) {
+      const i = G.hands.p.findIndex(x => x.id === id);
+      if (i < 0) continue;
+      G.deck.p.push(G.hands.p.splice(i, 1)[0]);
+      shuffle(G.deck.p);
+      drawCards(G, 'p', 1);
+    }
+    mullSel = [];
+    hideModal(); startMusic(); render(); if (G.turn === 'e') setTimeout(aiMove, 700);
+  };
+  render();
+}
+
+function factionPick() {
+  showModal(`<h2>Choisissez votre faction</h2><div class="fac">${Object.keys(FAC).map(k => `<button class="btn" data-fac="${k}"><b>${FAC[k]}</b><br><small>${FAC_TXT[k]}</small></button>`).join('')}</div>`);
+  render();
+}
+function restart() { hideModal(); factionPick(); }
+
+$('app').addEventListener('click', e => {
+  if (G.turn !== 'p' || G.over || modalOpen) return;
+  const sc0 = sel && selCard();
+  if (sc0 && sc0.agile && !e.target.closest('[data-hand]')) {
+    const rw = e.target.closest('.row[data-prow]');
+    if (rw && rw.dataset.prow !== 'siege') { const id = sel; sel = null; return humanPlay(id, rw.dataset.prow); }
+  }
+  const el = e.target.closest('[data-act],[data-hand]');
+  if (!el) return;
+  if (el.dataset.hand) {
+    const id = +el.dataset.hand;
+    const c = G.hands.p.find(x => x.id === id);
+    if (!c) return;
+    const special = c.kind === 'horn' || c.kind === 'decoy' || c.kind === 'mardroeme' || c.agile;
+    if (sel === id) {
+      sel = null;
+      if (special) return render();
+      return humanPlay(id);
+    }
+    sel = id;
+    return render();
+  }
+  if (!sel) return;
+  if (el.dataset.act === 'horn' && el.dataset.side === 'p' && !G.horn.p[el.dataset.row] && selCard().kind === 'horn') {
+    const id = sel; sel = null; humanPlay(id, el.dataset.row);
+  } else if ((el.dataset.act === 'decoy' || el.dataset.act === 'mard') && el.classList.contains('target')) {
+    const id = sel; sel = null; humanPlay(id, +el.dataset.id);
+  }
+});
+
+$('b-pass').onclick = () => {
+  if (G.turn !== 'p' || G.over || modalOpen) return;
+  G.passed.p = true; sel = null;
+  pushLog('Vous passez.');
+  afterAction();
+};
+$('modal').addEventListener('click', e => {
+  const m = e.target.closest('[data-mull],[data-revive],[data-fac]');
+  if (!m) return;
+  if (m.dataset.fac) {
+    G = newGame(m.dataset.fac, randFac()); sel = null; hideModal(); intro();
+  } else if (m.dataset.mull) {
+    const id = +m.dataset.mull;
+    if (mullSel.includes(id)) mullSel = mullSel.filter(x => x !== id);
+    else if (mullSel.length < 2) mullSel.push(id);
+    m.classList.toggle('sel', mullSel.includes(id));
+  } else {
+    const t = G.grave.p.find(x => x.id === +m.dataset.revive);
+    if (!t) return;
+    G.grave.p.splice(G.grave.p.indexOf(t), 1);
+    G.board.p[t.row].push(t);
+    pushLog(`${t.name} revient au combat.`);
+    hideModal(); sfxCard(); afterAction();
+  }
+});
+$('b-new').onclick = restart;
+$('b-rules').onclick = () => {
+  if (modalOpen) return;
+  showModal(`${RULES}<button class="btn primary" id="m-close">Fermer</button>`);
+  $('m-close').onclick = () => { hideModal(); render(); if (G.turn === 'e' && !G.over) setTimeout(aiMove, 700); };
+};
+
+
+/* ===== Musique de fond ===== */
+const TRACKS = ['music/track-a.mp3', 'music/track-b.mp3'];
+const bgm = new Audio();
+bgm.volume = 0.35;
+let trackIdx = Math.random() < 0.5 ? 0 : 1;
+let muted = false;
+try { muted = localStorage.getItem('gwent-muted') === '1'; } catch (e) {}
+function paintMute() {
+  const b = $('b-mute');
+  b.textContent = muted ? 'Son : off' : 'Son : on';
+  b.setAttribute('aria-pressed', String(muted));
+}
+function startMusic() {
+  if (muted) return;
+  if (!bgm.getAttribute('src')) bgm.src = TRACKS[trackIdx];
+  const r = bgm.play();
+  if (r && r.catch) r.catch(() => {});
+}
+bgm.addEventListener('ended', () => {
+  trackIdx = (trackIdx + 1) % TRACKS.length;
+  bgm.src = TRACKS[trackIdx];
+  startMusic();
+});
+$('b-mute').onclick = () => {
+  muted = !muted;
+  try { localStorage.setItem('gwent-muted', muted ? '1' : '0'); } catch (e) {}
+  if (muted) bgm.pause(); else startMusic();
+  paintMute();
+};
+paintMute();
+
+factionPick();
+</script>
+
+</body></html>
