@@ -13,7 +13,7 @@
   color-scheme:dark;
 }
 body{background:var(--ink);color:var(--bone);font:16px/1.35 var(--f-body);
-  padding-top:12px;padding-bottom:calc(170px + env(safe-area-inset-bottom,0px));
+  padding-top:12px;padding-bottom:calc(200px + env(safe-area-inset-bottom,0px));
   padding-left:max(16px,env(safe-area-inset-left,0px));
   padding-right:max(16px,env(safe-area-inset-right,0px));}
 #app{max-width:680px;margin:0 auto;display:flex;flex-direction:column;gap:10px}
@@ -65,9 +65,9 @@ h2{font:700 20px var(--f-display);letter-spacing:.06em;color:var(--gold);margin:
 .card.sp{border-top-color:var(--good)}
 .s.up{color:var(--good)}
 .s.down{color:var(--blood)}
-.hand{position:fixed;left:0;right:0;bottom:env(safe-area-inset-bottom,0px);z-index:5;display:flex;gap:6px;overflow-x:auto;padding:34px max(16px,env(safe-area-inset-right,0px)) 10px max(16px,env(safe-area-inset-left,0px));background:var(--ink);border-top:1px solid var(--line);box-shadow:0 -8px 16px rgba(0,0,0,.35)}
+.hand{position:fixed;left:0;right:0;bottom:env(safe-area-inset-bottom,0px);z-index:5;display:flex;gap:6px;overflow-x:auto;padding:64px max(16px,env(safe-area-inset-right,0px)) 10px max(16px,env(safe-area-inset-left,0px));background:var(--ink);border-top:1px solid var(--line);box-shadow:0 -8px 16px rgba(0,0,0,.35)}
 .hand .card{cursor:pointer}
-.hand .card.sel{transform:scale(1.3);transform-origin:50% 100%;z-index:2;border-color:var(--gold);box-shadow:0 0 0 2px var(--gold),0 6px 14px rgba(0,0,0,.6)}
+.hand .card.sel{transform:scale(1.56);transform-origin:50% 100%;z-index:2;border-color:var(--gold);box-shadow:0 0 0 2px var(--gold),0 6px 14px rgba(0,0,0,.6)}
 .hand.off .card{opacity:.55;cursor:not-allowed}
 .grp{border-top:1px solid var(--line);padding:6px 0}
 .grp summary{cursor:pointer;font:700 14px var(--f-display);letter-spacing:.04em;color:var(--gold);padding:6px 2px;list-style:none}
@@ -645,6 +645,11 @@ const sigTab = keys => `<table class="sigtab"><tbody>` + SIG_ROWS.filter(r => ke
   `<tr><td>${k.map(ico).join('')}</td><td><b>${n}</b><br>${d}<br><i>Exemples : ${ex}</i></td></tr>`).join('') + `</tbody></table>`;
 const grp = (title, html) => `<details class="grp"><summary>${title}</summary><div class="grpbody">${html}</div></details>`;
 const RULES = `<h2>Règles</h2>` +
+grp('But du jeu et points', `<ul>
+<li><b>But</b> : gagner deux manches sur trois. Vous perdez le match quand vous n’avez plus de vies.</li>
+<li><b>Points</b> : pendant une manche, chaque carte posée ajoute sa force au total de sa rangée. Votre score de manche est la somme de vos trois rangées. Les points ne sont jamais retirés, sauf par le Brasier et la météo qui ramènent des forces à 1 ou détruisent des unités.</li>
+<li><b>Fin de manche</b> : la manche s’arrête quand les deux joueurs passent (ou n’ont plus de cartes). Le total le plus élevé gagne la manche.</li>
+<li><b>Quand vous perdez une vie</b> : quand vous perdez une manche, vous perdez une vie. En cas d’égalité, chaque joueur perd une vie (sauf Nilfgaard, qui gagne l’égalité). Avec zéro vie, vous perdez le match.</li></ul>`) +
 grp('Déroulement du match', `<ul>
 <li><b>Match</b> : deux manches gagnées sur trois. Chaque joueur a deux vies ; une manche perdue en coûte une, l’égalité en coûte une à chacun (sauf Nilfgaard, qui remporte l’égalité).</li>
 <li><b>Deck</b> : au moins 22 unités, au plus 10 cartes spéciales et 4 Héros. Main de départ de 10 cartes ; avant le premier round, changez jusqu’à deux cartes.</li>
