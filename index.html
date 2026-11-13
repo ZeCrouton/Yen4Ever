@@ -13,7 +13,7 @@
   color-scheme:dark;
 }
 body{background:var(--ink);color:var(--bone);font:16px/1.35 var(--f-body);
-  padding-top:64px;padding-bottom:calc(200px + env(safe-area-inset-bottom,0px));
+  padding-top:64px;padding-bottom:calc(250px + env(safe-area-inset-bottom,0px));
   padding-left:max(16px,env(safe-area-inset-left,0px));
   padding-right:max(16px,env(safe-area-inset-right,0px));}
 #app{max-width:680px;margin:0 auto;display:flex;flex-direction:column;gap:10px}
@@ -67,7 +67,10 @@ h2{font:700 20px var(--f-display);letter-spacing:.06em;color:var(--gold);margin:
 .card.sp{border-top-color:var(--good)}
 .s.up{color:var(--good)}
 .s.down{color:var(--blood)}
-.hand{position:fixed;left:0;right:0;bottom:env(safe-area-inset-bottom,0px);z-index:5;display:flex;gap:6px;overflow-x:auto;padding:64px max(16px,env(safe-area-inset-right,0px)) 10px max(16px,env(safe-area-inset-left,0px));background:var(--ink);border-top:1px solid var(--line);box-shadow:0 -8px 16px rgba(0,0,0,.35)}
+.hand{position:fixed;left:0;right:0;bottom:env(safe-area-inset-bottom,0px);z-index:5;display:flex;flex-direction:column;background:var(--ink);border-top:1px solid var(--line);box-shadow:0 -8px 16px rgba(0,0,0,.35)}
+.handrow{display:flex;gap:6px;overflow-x:auto;padding:64px max(16px,env(safe-area-inset-right,0px)) 8px max(16px,env(safe-area-inset-left,0px))}
+.cardinfo{min-height:44px;padding:4px max(16px,env(safe-area-inset-right,0px)) 10px max(16px,env(safe-area-inset-left,0px));font-size:14px;line-height:1.35;color:var(--bone);border-top:1px solid var(--line)}
+.cardinfo b{font:700 14px var(--f-display);color:var(--gold);letter-spacing:.03em}
 .hand .card{cursor:pointer}
 .hand .card.sel{transform:scale(1.56);transform-origin:50% 100%;z-index:2;border-color:var(--gold);box-shadow:0 0 0 2px var(--gold),0 6px 14px rgba(0,0,0,.6)}
 .hand.off .card{opacity:.55;cursor:not-allowed}
@@ -533,6 +536,41 @@ function plHtml(side, name) {
     `<div class="tot">${total(G, side)}</div></div>`;
 }
 
+/* Résumé de la carte sélectionnée, affiché sous la main */
+const ABILITY_TXT = {
+  bond: 'Lien : force ×2 si une carte identique est côte à côte dans la rangée.',
+  morale: 'Moral : +1 aux autres unités de sa rangée.',
+  spy: 'Espion : posé chez l’adversaire, sa force compte pour lui ; vous piochez 2 cartes.',
+  medic: 'Médic : relève une unité de votre défausse (hors Héros et spéciales).',
+  muster: 'Sursaut : pose aussitôt toutes les cartes du même nom (main et deck).',
+  berserk: 'Berserker : transformé en ours de combat (force 8) par le Mardroeme.'
+};
+const KIND_TXT = {
+  horn: 'Cor de guerre : double la force d’une rangée de votre choix.',
+  scorch: 'Brasier : détruit les unités les plus fortes du plateau (Héros épargnés).',
+  decoy: 'Leurre : reprend une de vos unités en main.',
+  mardroeme: 'Mardroeme : transforme les Berserkers d’une rangée en ours de combat.'
+};
+const WX_TXT = {
+  close: 'Gel mordant : ramène à 1 la force de la Mêlée, pour les deux camps.',
+  ranged: 'Brouillard épais : ramène à 1 la force de la Distance, pour les deux camps.',
+  siege: 'Pluie torrentielle : ramène à 1 la force du Siège, pour les deux camps.',
+  clear: 'Ciel dégagé : annule toute la météo.'
+};
+function cardInfo(c) {
+  if (c.kind !== 'unit') {
+    const txt = c.kind === 'weather' ? WX_TXT[c.w] : KIND_TXT[c.kind];
+    return `<b>${c.name}</b><br>${txt}`;
+  }
+  const head = `${c.name} · force ${c.str}${c.hero ? ' · Héros' : ''} · ${ROW_FR[c.row]}`;
+  const lines = [];
+  if (c.hero) lines.push('Héros : force fixe, immunisé contre la météo, le cor, le brasier et les capacités adverses.');
+  if (c.ab) lines.push(ABILITY_TXT[c.ab]);
+  if (c.agile) lines.push('Agile : se place au choix en Mêlée ou en Distance.');
+  if (!lines.length) lines.push('Unité simple : sa force s’ajoute à sa rangée.');
+  return `<b>${head}</b><br>${lines.join('<br>')}`;
+}
+
 function render() {
   $('hud').innerHTML = plHtml('e', 'Adversaire') + plHtml('p', 'Vous');
   $('side-e').innerHTML = ROW_ORDER.e.map(r => rowHtml('e', r)).join('');
@@ -543,8 +581,10 @@ function render() {
   $('log').innerHTML = (G.logs.length ? G.logs : ['À vous de jouer.']).map(l => `<span>${l}</span>`).join('');
   const mine = G.turn === 'p' && !G.over && !modalOpen;
   $('hand').className = 'hand' + (mine ? '' : ' off');
-  $('hand').innerHTML = G.hands.p.map(c =>
-    cardHtml(c, symOf(c), 'big' + (c.id === sel ? ' sel' : ''), `data-hand="${c.id}"`)).join('') || '<span class="sm">Plus de cartes.</span>';
+  const shown = selCard();
+  $('hand').innerHTML = `<div class="handrow">${G.hands.p.map(c =>
+    cardHtml(c, symOf(c), 'big' + (c.id === sel ? ' sel' : ''), `data-hand="${c.id}"`)).join('') || '<span class="sm">Plus de cartes.</span>'}</div>` +
+    `<div class="cardinfo">${shown ? cardInfo(shown) : ''}</div>`;
   $('b-pass').disabled = !mine;
   const sc = selCard();
   $('hint').textContent = !mine ? (G.over ? '' : 'L’adversaire réfléchit…') :
