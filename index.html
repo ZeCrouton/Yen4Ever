@@ -30,6 +30,10 @@ h2{font:700 20px var(--f-display);letter-spacing:.06em;color:var(--gold);margin:
 .hud{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .pl{background:var(--panel);border:1px solid var(--line);padding:8px 10px;border-radius:4px;display:flex;justify-content:space-between;align-items:center;gap:8px;min-width:0}
 .pl.turn{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold) inset}
+.pl-p{border-left:5px solid #5fb85f}
+.pl-p .tot{color:#5fb85f}
+.pl-e{border-left:5px solid #e0604a}
+.pl-e .tot{color:#e0604a}
 .pl .nm{font:700 13px var(--f-display);letter-spacing:.05em}
 .pl .sm{font-size:12px;color:var(--mute)}
 .pl .tot{font:700 28px var(--f-display);font-variant-numeric:tabular-nums}
@@ -544,7 +548,7 @@ function rowHtml(side, row) {
 
 function gems(n) { return [0, 1].map(i => `<span class="gem ${i < n ? '' : 'off'}"></span>`).join(''); }
 function plHtml(side, name) {
-  return `<div class="pl ${G.turn === side && !G.over ? 'turn' : ''}"><div><div class="nm">${name}${G.passed[side] ? ' · passé' : ''}</div><div class="sm">${FAC[G.faction[side]]}</div>` +
+  return `<div class="pl pl-${side} ${G.turn === side && !G.over ? 'turn' : ''}"><div><div class="nm">${name}${G.passed[side] ? ' · passé' : ''}</div><div class="sm">${FAC[G.faction[side]]}</div>` +
     `<div>${gems(G.lives[side])}<span class="sm">${G.hands[side].length} cartes</span></div></div>` +
     `<div class="tot">${total(G, side)}</div></div>`;
 }
@@ -695,9 +699,9 @@ function aiMove() {
     sfxCard();
     G.pendingAfter = true;
     render();
-    /* Pause : le joueur voit le plateau de l'adversaire et la carte posée avant de reprendre la main */
+    /* Pause : le joueur voit le plateau de l'adversaire et la carte posée avant de reprendre la main (2,2 s) */
     const g0 = G;
-    setTimeout(() => { if (G === g0) afterAction(); }, 1300);
+    setTimeout(() => { if (G === g0) afterAction(); }, 2200);
   } else {
     G.passed.e = true; pushLog('L’adversaire passe.');
     afterAction();
