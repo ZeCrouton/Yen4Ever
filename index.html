@@ -667,7 +667,21 @@ grp('Déroulement du match', `<ul>
 <li><b>Deck</b> : au moins 22 unités, au plus 10 cartes spéciales et 4 Héros. Main de départ de 10 cartes ; avant le premier round, changez jusqu’à deux cartes.</li>
 <li><b>Tour</b> : jouez exactement une carte ou passez. Les forces de chaque rangée s’additionnent ; le plus grand total l’emporte. Aucune pioche automatique aux manches 2 et 3.</li>
 </ul>`) +
-grp('Rangées : Mêlée, Distance, Siège', `<p>Chaque carte d’unité se joue dans une rangée, indiquée par son sigle et la couleur de sa bordure.</p>${sigTab(['close','ranged','siege'])}`) +
+grp('Les 3 rangées et l’adversaire', `
+<p><b>Chaque camp a ses 3 rangées</b> : Mêlée, Distance, Siège. L’adversaire est en haut, vous êtes en bas. Chaque rangée a son propre total, affiché à gauche.</p>
+<p><b>Les cartes ne se battent pas entre elles.</b> Vos unités ne détruisent jamais celles de l’adversaire en les touchant. Chaque camp additionne seulement ses propres rangées, et on compare les deux scores à la fin.</p>
+<p><b>Où se pose une carte ?</b> Une unité va dans sa rangée, indiquée par son sigle et la couleur de sa bordure (rouge = Mêlée, bleu = Distance, violet = Siège). Les cartes Agiles choisissent Mêlée ou Distance.</p>
+<p><b>Ce qui reste dans votre camp</b> (une rangée à la fois) :</p>
+<ul>
+<li><b>Lien</b> et <b>Moral</b> : ne comptent qu’avec les cartes de votre même rangée.</li>
+<li><b>Cor de guerre</b> : double toute la rangée que vous choisissez, de votre côté seulement. Un cor par rangée.</li></ul>
+<p><b>Comment agir sur l’adversaire</b> (seulement 3 moyens) :</p>
+<ul>
+<li><b>Météo</b> : touche la même rangée des deux camps. Le Gel mordant ramène à 1 la force de toutes les cartes de Mêlée, les vôtres comme les siennes. Utile quand l’adversaire a beaucoup de points dans cette rangée et vous peu.</li>
+<li><b>Brasier</b> : regarde les deux plateaux et détruit l’unité la plus forte (ou toutes celles à égalité), chez lui comme chez vous. Les Héros sont épargnés.</li>
+<li><b>Espion</b> : se pose dans la rangée de l’adversaire. Sa force augmente le score de l’adversaire, mais vous piochez 2 cartes.</li></ul>
+<p><b>Exemple</b> : l’adversaire a 20 en Mêlée, vous avez 6. Vous jouez le Gel mordant : toutes les cartes de Mêlée valent 1. Il tombe à 4 cartes × 1 = 4, vous aussi à 2 cartes × 1 = 2. Il perd 16 points, vous en perdez 4. Les Héros et les cartes d’autres rangées ne bougent pas.</p>
+<p><b>Protection</b> : les Héros (cadre doré) ignorent météo, cor et Brasier.</p>${sigTab(['close','ranged','siege'])}`) +
 grp('Capacités des unités', `<p>Ces capacités se déclenchent quand la carte est posée ou tant qu’elle est sur le plateau.</p>${sigTab(['bond','morale','spy','medic','muster','agile','hero'])}`) +
 grp('Skellige : Berserkers et Mardroeme', `<p>Les Berserkers sont des unités ordinaires. Le Mardroeme les transforme en ours de combat de force 8 dans la rangée choisie.</p>${sigTab(['berserk','mardroeme'])}`) +
 grp('Cartes spéciales : cor, brasier, leurre', `<p>Le cor reste sur sa rangée jusqu’à la fin de la manche. Le brasier et la météo vont à la défausse après leur effet. Le leurre prend la place de l’unité qu’il reprend.</p>${sigTab(['horn','scorch','decoy'])}`) +
