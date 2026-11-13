@@ -122,7 +122,7 @@ const ROW_FR = { close: 'Mêlée', ranged: 'Distance', siege: 'Siège' };
 let UID = 1;
 
 const FAC = { nord: 'Royaumes du Nord', nilfgaard: 'Nilfgaard', skellige: 'Skellige' };
-const FAC_TXT = { nord: 'Pioche une carte si vous gagnez la première manche.', nilfgaard: 'Remporte la manche en cas d’égalité.', skellige: 'Berserkers et Mardroeme ; 2 unités reviennent au début de la manche 3.' };
+const FAC_TXT = { nord: 'Pioche une carte à chaque manche gagnée.', nilfgaard: 'Remporte la manche en cas d’égalité.', skellige: 'Berserkers et Mardroeme ; 2 unités reviennent au début de la manche 3.' };
 const randFac = () => Object.keys(FAC)[Math.floor(Math.random() * 3)];
 
 function makePool(faction) {
@@ -205,7 +205,13 @@ function cardStr(st, side, row, c) {
   if (c.hero) return c.str;
   const R = st.board[side][row];
   let v = st.weather[row] ? 1 : c.str;
-  if (c.ab === 'bond') { const i = R.indexOf(c); if ([R[i - 1], R[i + 1]].some(x => x && x.ab === 'bond' && x.name === c.name)) v *= 2; }
+  if (c.ab === 'bond') {
+    const i = R.indexOf(c);
+    let run = 1;
+    for (let j = i - 1; j >= 0 && R[j].ab === 'bond' && R[j].name === c.name; j--) run++;
+    for (let j = i + 1; j < R.length && R[j].ab === 'bond' && R[j].name === c.name; j++) run++;
+    if (run >= 2) v *= run;
+  }
   v += R.filter(x => x.ab === 'morale' && x !== c).length;
   if (st.horn[side][row]) v *= 2;
   return v;
@@ -332,7 +338,7 @@ function clearRound(st, w) {
     }
   }
   for (const r of ROWS) st.weather[r] = false;
-  if (w && st.round === 1 && st.faction[w] === 'nord') drawCards(st, w, 1); /* bonus Royaumes du Nord */
+  if (w && st.faction[w] === 'nord') drawCards(st, w, 1); /* bonus Royaumes du Nord : une carte à chaque manche gagnée */
   st.passed = { p: false, e: false };
   st.round++;
   if (st.round === 3) for (const sd of ['p', 'e']) if (st.faction[sd] === 'skellige') {
@@ -538,7 +544,7 @@ function plHtml(side, name) {
 
 /* Résumé de la carte sélectionnée, affiché sous la main */
 const ABILITY_TXT = {
-  bond: 'Lien : force ×2 si une carte identique est côte à côte dans la rangée.',
+  bond: 'Lien : force × le nombre de cartes identiques qui se suivent dans la rangée (×2, ×3…).',
   morale: 'Moral : +1 aux autres unités de sa rangée.',
   spy: 'Espion : posé chez l’adversaire, sa force compte pour lui ; vous piochez 2 cartes.',
   medic: 'Médic : relève une unité de votre défausse (hors Héros et spéciales).',
@@ -650,7 +656,7 @@ function finishRound() {
   const rec = scoreRound(G);
   const res = rec.tp === rec.te && rec.w ? 'Égalité : Nilfgaard remporte la manche.' : rec.w === 'p' ? 'Vous remportez la manche.' : rec.w === 'e' ? 'L’adversaire remporte la manche.' : 'Égalité : chacun perd une vie.';
   render();
-  showModal(`<h2>Manche ${rec.n}</h2><p class="score">${rec.tp} — ${rec.te}</p><p>${res}${rec.w && rec.n === 1 && G.faction[rec.w] === 'nord' ? ' Royaumes du Nord : une carte est piochée.' : ''}</p><button class="btn primary" id="m-ok">Continuer</button>`);
+  showModal(`<h2>Manche ${rec.n}</h2><p class="score">${rec.tp} — ${rec.te}</p><p>${res}${rec.w && G.faction[rec.w] === 'nord' ? ' Royaumes du Nord : une carte est piochée.' : ''}</p><button class="btn primary" id="m-ok">Continuer</button>`);
   $('m-ok').onclick = () => {
     clearRound(G, rec.w);
     sel = null;
@@ -672,7 +678,7 @@ const SIG_ROWS = [
   [['close'], 'Mêlée (épée)', 'Combat au corps-à-corps. Bordure rouge.', 'Fantassin, Piquier, Cavalier'],
   [['ranged'], 'Distance (arc)', 'Combat à distance. Bordure bleue.', 'Archer, Arbalétrier, Apothicaire'],
   [['siege'], 'Siège (catapulte)', 'Engins de siège. Bordure violette.', 'Catapulte, Baliste, Bélier'],
-  [['bond'], 'Lien (deux cercles)', 'Deux cartes identiques côte à côte : force doublée pour chacune.', 'Hallebardier, Arbalétrier'],
+  [['bond'], 'Lien (deux cercles)', 'Cartes identiques qui se suivent : force × leur nombre (×2 pour deux, ×3 pour trois).', 'Hallebardier, Arbalétrier'],
   [['spy'], 'Espion (œil)', 'Posé chez l’adversaire ; sa force compte pour lui ; vous piochez 2 cartes.', 'Éclaireur, Infiltré, Émissaire'],
   [['medic'], 'Médic (croix)', 'Relève une unité de votre défausse (hors Héros et spéciales).', 'Guérisseuse, Apothicaire'],
   [['morale'], 'Moral (étendard)', '+1 aux autres unités de sa rangée.', 'Porte-étendard, Barde'],
@@ -710,7 +716,7 @@ grp('But du jeu et points', `
 <p><b>Exemple</b> : vous avez 5 en Mêlée et 8 en Siège, l’adversaire a 6 en Mêlée et 4 en Distance. Vous : 13. Lui : 10. Vous gagnez la manche, l’adversaire perd une vie.</p>
 <p><b>Quand perd-on le match ?</b> Dès que vous n’avez plus aucune vie (vos 2 losanges sont vides). Le match est alors terminé, même s’il reste des manches.</p>
 <p><b>Après une manche</b> : le plateau est vidé, toutes les cartes jouées vont à la défausse et les scores repartent à zéro. Vous gardez les cartes qu’il vous reste en main.</p>
-<p><b>Ce qui change la force d’une carte</b> : le Lien (×2), le Moral (+1), le Cor de guerre (×2 pour la rangée), la météo (ramène à 1) et le Brasier (détruit les plus fortes). Les chiffres en vert sont augmentés, ceux en rouge sont réduits. Les Héros ne changent jamais.</p>`) +
+<p><b>Ce qui change la force d’une carte</b> : le Lien (×2, ×3…), le Moral (+1), le Cor de guerre (×2 pour la rangée), la météo (ramène à 1) et le Brasier (détruit les plus fortes). Les chiffres en vert sont augmentés, ceux en rouge sont réduits. Les Héros ne changent jamais.</p>`) +
 grp('Déroulement du match', `<ul>
 <li><b>Deck</b> : au moins 22 unités, au plus 10 cartes spéciales et 4 Héros. Main de départ de 10 cartes ; avant le premier round, changez jusqu’à deux cartes.</li>
 <li><b>Tour</b> : jouez exactement une carte ou passez. Les forces de chaque rangée s’additionnent ; le plus grand total l’emporte. Aucune pioche automatique aux manches 2 et 3.</li>
@@ -735,7 +741,7 @@ grp('Skellige : Berserkers et Mardroeme', `<p>Les Berserkers sont des unités or
 grp('Cartes spéciales : cor, brasier, leurre', `<p>Le cor reste sur sa rangée jusqu’à la fin de la manche. Le brasier et la météo vont à la défausse après leur effet. Le leurre prend la place de l’unité qu’il reprend.</p>${sigTab(['horn','scorch','decoy'])}`) +
 grp('Météo', `<p>Une carte météo ramène la force de sa rangée à 1 pour les deux camps. Le ciel dégagé annule toute la météo.</p>${sigTab(['frost','fog','rain','sun'])}`) +
 grp('Factions', `<ul>
-<li><b>Royaumes du Nord</b> : pioche une carte si vous gagnez la première manche.</li>
+<li><b>Royaumes du Nord</b> : pioche une carte à chaque manche gagnée.</li>
 <li><b>Nilfgaard</b> : remporte la manche en cas d’égalité.</li>
 <li><b>Skellige</b> : joue les Berserkers et le Mardroeme ; 2 unités de la défausse reviennent au début de la manche 3.</li></ul>`) +
 `<p class="hint">Touchez un titre pour l’ouvrir.</p>`;
