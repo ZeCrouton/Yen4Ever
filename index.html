@@ -612,6 +612,31 @@ function render() {
     sc && sc.kind === 'mardroeme' ? 'Touchez un de vos Berserkers sur le plateau.' :
     sc && sc.agile ? 'Touchez la rangée Mêlée ou Distance.' : sc ? 'Touchez à nouveau la carte pour la jouer.' : 'Touchez une carte pour la jouer.';
   if (viewTurn !== G.turn && !G.over && !modalOpen) { viewTurn = G.turn; focusTurn(); }
+  persist();
+}
+
+/* Sauvegarde locale : la partie survit à une actualisation ou à une sortie par erreur */
+const SAVE_KEY = 'yen4ever-save';
+function persist() {
+  try {
+    if (inGame && !G.over) localStorage.setItem(SAVE_KEY, JSON.stringify({ G, UID, inGame, viewTurn }));
+    else localStorage.removeItem(SAVE_KEY);
+  } catch (e) {}
+}
+function loadGame() {
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (!raw) return false;
+    const d = JSON.parse(raw);
+    if (!d || !d.G || d.G.over || !d.inGame) return false;
+    G = d.G; UID = d.UID; inGame = true; viewTurn = d.viewTurn; sel = null; modalOpen = false;
+    hideModal();
+    render();
+    if (G.passed.p && G.passed.e) finishRound();
+    else if (G.pendingAfter) afterAction();
+    else if (G.turn === 'e') setTimeout(aiMove, 700);
+    return true;
+  } catch (e) { return false; }
 }
 
 function pushLog(m) { G.logs.push(m); if (G.logs.length > 3) G.logs.shift(); }
@@ -641,6 +666,7 @@ function pickMedic() {
 
 function afterAction() {
   const s = G;
+  s.pendingAfter = false;
   for (const sd of ['p', 'e']) if (!s.passed[sd] && !s.hands[sd].length) {
     s.passed[sd] = true;
     pushLog(sd === 'p' ? 'Vous n’avez plus de cartes : vous passez.' : 'L’adversaire n’a plus de cartes et passe.');
@@ -658,6 +684,7 @@ function aiMove() {
   if (a) {
     pushLog(play(G, 'e', a.id, a.arg));
     sfxCard();
+    G.pendingAfter = true;
     render();
     /* Pause : le joueur voit le plateau de l'adversaire et la carte posée avant de reprendre la main */
     const g0 = G;
@@ -669,12 +696,15 @@ function aiMove() {
 }
 
 function finishRound() {
-  const rec = scoreRound(G);
+  let rec;
+  if (G.roundPending) rec = G.history[G.history.length - 1];
+  else { rec = scoreRound(G); G.roundPending = true; }
   const res = rec.tp === rec.te && rec.w ? 'Égalité : Nilfgaard remporte la manche.' : rec.w === 'p' ? 'Vous remportez la manche.' : rec.w === 'e' ? 'L’adversaire remporte la manche.' : 'Égalité : chacun perd une vie.';
   render();
   showModal(`<h2>Manche ${rec.n}</h2><p class="score">${rec.tp} — ${rec.te}</p><p>${res}${rec.w && G.faction[rec.w] === 'nord' ? ' Royaumes du Nord : une carte est piochée.' : ''}</p><button class="btn primary" id="m-ok">Continuer</button>`);
   $('m-ok').onclick = () => {
     clearRound(G, rec.w);
+    G.roundPending = false;
     sel = null;
     if (G.over) {
       const t = G.winner === 'p' ? 'Victoire !' : G.winner === 'e' ? 'Défaite' : 'Égalité';
@@ -901,7 +931,7 @@ $('b-mute').onclick = () => {
 };
 paintMute();
 
-factionPick();
+if (!loadGame()) factionPick();
 </script>
 
 </body></html>
