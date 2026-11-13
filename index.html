@@ -447,7 +447,7 @@ const $ = id => document.getElementById(id);
 const ROW_ORDER = { e: ['siege', 'ranged', 'close'], p: ['close', 'ranged', 'siege'] };
 const AB = { bond: 'Lien', spy: 'Espion', medic: 'Médic', morale: 'Moral', muster: 'Sursaut', berserk: 'Berserker' };
 const KIND_TAG = { horn: 'Cor', scorch: 'Brasier', decoy: 'Leurre', weather: 'Météo', mardroeme: 'Mardroeme' };
-const tagOf = c => c.kind !== 'unit' ? KIND_TAG[c.kind] : [c.hero ? 'Héros' : '', c.ab ? AB[c.ab] : (c.hero ? '' : ROW_FR[c.row]), c.agile ? 'Agile' : ''].filter(Boolean).join('·');
+const tagOf = c => c.kind !== 'unit' ? KIND_TAG[c.kind] : [c.hero ? 'Héros' : '', c.agile ? 'Agile' : ROW_FR[c.row]].filter(Boolean).join('·');
 const symOf = c => c.kind === 'unit' ? c.str : c.kind === 'horn' ? '×2' : c.kind === 'scorch' ? '!!' : c.kind === 'decoy' ? '⇄' : c.kind === 'mardroeme' ? 'M' : c.w === 'clear' ? '0' : '=1';
 const selCard = () => G.hands.p.find(x => x.id === sel);
 
