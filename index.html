@@ -92,6 +92,14 @@ h2{font:700 20px var(--f-display);letter-spacing:.06em;color:var(--gold);margin:
 .c-hero{--c:#f2c94c}
 .c-spec{--c:#e0559c}
 .c-wx{--c:#8fe3f5}
+.inspect{position:fixed;inset:0;z-index:20;background:rgba(10,8,6,.74);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:20px}
+.inspect[hidden]{display:none}
+.insp-card .big{width:150px;height:214px;cursor:pointer}
+.insp-card .big .n{font-size:14px;padding:18px 4px 30px;max-height:70px}
+.insp-card .big .s{min-width:36px;height:36px;border-radius:18px;font-size:22px}
+.insp-txt{max-width:340px;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:12px 14px;font-size:15px;line-height:1.4;color:var(--bone)}
+.insp-txt b{font:700 16px var(--f-display);color:var(--gold)}
+.insp-hint{font-size:12px;color:var(--mute)}
 .sigtab{width:100%;border-collapse:collapse;font-size:14px}
 .sigtab td{border-top:1px solid var(--line);padding:6px 4px;vertical-align:top}
 .sigtab td:first-child{width:44px;white-space:nowrap}
@@ -123,6 +131,7 @@ h2{font:700 20px var(--f-display);letter-spacing:.06em;color:var(--gold);margin:
   <div class="side" id="side-p"></div>
   <div class="log" id="log"></div>
   <div class="ctl"><button class="btn primary" id="b-pass">Passer</button><span class="hint" id="hint"></span><span class="tools"><button class="btn" id="b-new">Nouvelle partie</button></span></div>
+  <div id="inspect" class="inspect" hidden></div>
   <div class="hand" id="hand"></div>
 </div>
 <div class="modal" id="modal" hidden></div>
@@ -537,7 +546,8 @@ function rowHtml(side, row) {
     const v = cardStr(G, side, row, c);
     const vc = c.kind === 'unit' && !c.hero ? (v > c.str ? 'up' : v < c.str ? 'down' : '') : '';
     const tgt = side === 'p' && sc && ((sc.kind === 'decoy' && c.kind === 'unit' && !c.hero) || (sc.kind === 'mardroeme' && c.ab === 'berserk'));
-    return cardHtml(c, v, tgt ? 'target' : '', `data-act="${sc && sc.kind === 'mardroeme' ? 'mard' : 'decoy'}" data-id="${c.id}"`, vc);
+    const attrs = side === 'p' ? `data-act="${sc && sc.kind === 'mardroeme' ? 'mard' : 'decoy'}" data-id="${c.id}"` : `data-insp="${c.id}"`;
+    return cardHtml(c, v, tgt ? 'target' : '', attrs, vc);
   }).join('');
   const agT = side === 'p' && sc && sc.agile && row !== 'siege';
   return `<div class="row ${G.weather[row] ? 'wx' : ''} ${agT ? 'target' : ''}" ${side === 'p' ? `data-prow="${row}"` : ''}>` +
@@ -587,6 +597,17 @@ function cardInfo(c) {
   if (!lines.length) lines.push('Unité simple : sa force s’ajoute à sa rangée.');
   return `<b>${head}</b><br>${lines.join('<br>')}`;
 }
+
+/* Aperçu agrandi d'une carte adverse, avec ses capacités. Touchez pour fermer. */
+function showInspect(id) {
+  const c = ROWS.flatMap(r => G.board.e[r]).find(x => x.id === id);
+  if (!c) return;
+  const v = cardStr(G, 'e', c.row, c);
+  $('inspect').innerHTML = `<div class="insp-card">${cardHtml(c, v, 'big', '')}</div>` +
+    `<div class="insp-txt">${cardInfo(c)}<br><span class="insp-hint">Touchez pour fermer</span></div>`;
+  $('inspect').hidden = false;
+}
+$('inspect').addEventListener('click', () => { $('inspect').hidden = true; });
 
 /* Vue : on se place sur son plateau quand c'est à soi de jouer, sur celui de l'adversaire sinon */
 let viewTurn = null;
@@ -859,6 +880,8 @@ $('app').addEventListener('click', e => {
     const rw = e.target.closest('.row[data-prow]');
     if (rw && rw.dataset.prow !== 'siege') { const id = sel; sel = null; return humanPlay(id, rw.dataset.prow); }
   }
+  const insp = e.target.closest('[data-insp]');
+  if (insp) { showInspect(+insp.dataset.insp); return; }
   const el = e.target.closest('[data-act],[data-hand]');
   if (!el) return;
   if (el.dataset.hand) {
