@@ -645,16 +645,28 @@ const sigTab = keys => `<table class="sigtab"><tbody>` + SIG_ROWS.filter(r => ke
   `<tr><td>${k.map(ico).join('')}</td><td><b>${n}</b><br>${d}<br><i>Exemples : ${ex}</i></td></tr>`).join('') + `</tbody></table>`;
 const grp = (title, html) => `<details class="grp"><summary>${title}</summary><div class="grpbody">${html}</div></details>`;
 const RULES = `<h2>Règles</h2>` +
-grp('But du jeu et points', `<ul>
-<li><b>But</b> : gagner deux manches sur trois. Vous perdez le match quand vous n’avez plus de vies.</li>
-<li><b>Points</b> : pendant une manche, chaque carte posée ajoute sa force au total de sa rangée. Votre score de manche est la somme de vos trois rangées. Les points ne sont jamais retirés, sauf par le Brasier et la météo qui ramènent des forces à 1 ou détruisent des unités.</li>
-<li><b>Fin de manche</b> : la manche s’arrête quand les deux joueurs passent (ou n’ont plus de cartes). Le total le plus élevé gagne la manche.</li>
-<li><b>Quand vous perdez une vie</b> : quand vous perdez une manche, vous perdez une vie. En cas d’égalité, chaque joueur perd une vie (sauf Nilfgaard, qui gagne l’égalité). Avec zéro vie, vous perdez le match.</li></ul>`) +
+grp('But du jeu et points', `
+<p><b>Le but</b> : gagner 2 manches sur 3. Un match, c’est donc 2 ou 3 manches.</p>
+<p><b>Deux sortes de points à ne pas confondre :</b></p>
+<ul>
+<li><b>La force</b> : le gros chiffre de chaque carte. Elle sert uniquement à gagner la manche en cours.</li>
+<li><b>Les vies</b> : les 2 losanges rouges sous chaque nom. C’est ce qui décide du match.</li></ul>
+<p><b>Comment une manche se joue</b></p>
+<ul>
+<li>À chaque tour, vous posez une carte. Sa force s’ajoute à sa rangée (Mêlée, Distance ou Siège).</li>
+<li>Le chiffre à gauche de chaque rangée est son total. Le grand chiffre dans le cadre du joueur, en haut, est la somme de ses trois rangées : c’est votre score de manche.</li>
+<li>Vous pouvez passer à tout moment. Une fois passé, vous ne jouez plus jusqu’à la fin de la manche.</li>
+<li>La manche se termine quand les deux joueurs ont passé, ou n’ont plus de cartes.</li></ul>
+<p><b>Qui gagne la manche ?</b> Celui qui a le score le plus élevé à ce moment-là. Le perdant perd 1 vie. Le gagnant ne perd rien et ne gagne pas de vie.</p>
+<p><b>Égalité</b> : les deux joueurs perdent 1 vie (sauf si l’un des deux est Nilfgaard : il gagne l’égalité, l’autre perd 1 vie).</p>
+<p><b>Exemple</b> : vous avez 5 en Mêlée et 8 en Siège, l’adversaire a 6 en Mêlée et 4 en Distance. Vous : 13. Lui : 10. Vous gagnez la manche, l’adversaire perd une vie.</p>
+<p><b>Quand perd-on le match ?</b> Dès que vous n’avez plus aucune vie (vos 2 losanges sont vides). Le match est alors terminé, même s’il reste des manches.</p>
+<p><b>Après une manche</b> : le plateau est vidé, toutes les cartes jouées vont à la défausse et les scores repartent à zéro. Vous gardez les cartes qu’il vous reste en main.</p>
+<p><b>Ce qui change la force d’une carte</b> : le Lien (×2), le Moral (+1), le Cor de guerre (×2 pour la rangée), la météo (ramène à 1) et le Brasier (détruit les plus fortes). Les chiffres en vert sont augmentés, ceux en rouge sont réduits. Les Héros ne changent jamais.</p>`) +
 grp('Déroulement du match', `<ul>
-<li><b>Match</b> : deux manches gagnées sur trois. Chaque joueur a deux vies ; une manche perdue en coûte une, l’égalité en coûte une à chacun (sauf Nilfgaard, qui remporte l’égalité).</li>
 <li><b>Deck</b> : au moins 22 unités, au plus 10 cartes spéciales et 4 Héros. Main de départ de 10 cartes ; avant le premier round, changez jusqu’à deux cartes.</li>
 <li><b>Tour</b> : jouez exactement une carte ou passez. Les forces de chaque rangée s’additionnent ; le plus grand total l’emporte. Aucune pioche automatique aux manches 2 et 3.</li>
-<li><b>Force</b> : le chiffre en haut à gauche de chaque carte est sa force.</li></ul>`) +
+</ul>`) +
 grp('Rangées : Mêlée, Distance, Siège', `<p>Chaque carte d’unité se joue dans une rangée, indiquée par son sigle et la couleur de sa bordure.</p>${sigTab(['close','ranged','siege'])}`) +
 grp('Capacités des unités', `<p>Ces capacités se déclenchent quand la carte est posée ou tant qu’elle est sur le plateau.</p>${sigTab(['bond','morale','spy','medic','muster','agile','hero'])}`) +
 grp('Skellige : Berserkers et Mardroeme', `<p>Les Berserkers sont des unités ordinaires. Le Mardroeme les transforme en ours de combat de force 8 dans la rangée choisie.</p>${sigTab(['berserk','mardroeme'])}`) +
