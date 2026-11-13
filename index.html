@@ -655,9 +655,17 @@ function afterAction() {
 function aiMove() {
   if (G.over || G.turn !== 'e' || modalOpen) return;
   const a = aiChoose(G);
-  if (a) { pushLog(play(G, 'e', a.id, a.arg)); sfxCard(); }
-  else { G.passed.e = true; pushLog('L’adversaire passe.'); }
-  afterAction();
+  if (a) {
+    pushLog(play(G, 'e', a.id, a.arg));
+    sfxCard();
+    render();
+    /* Pause : le joueur voit le plateau de l'adversaire et la carte posée avant de reprendre la main */
+    const g0 = G;
+    setTimeout(() => { if (G === g0) afterAction(); }, 1300);
+  } else {
+    G.passed.e = true; pushLog('L’adversaire passe.');
+    afterAction();
+  }
 }
 
 function finishRound() {
