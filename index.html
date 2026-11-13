@@ -692,6 +692,22 @@ grp('Factions', `<ul>
 <li><b>Skellige</b> : joue les Berserkers et le Mardroeme ; 2 unités de la défausse reviennent au début de la manche 3.</li></ul>`) +
 `<p class="hint">Touchez un titre pour l’ouvrir.</p>`;
 
+/* Confirmation « Quitter la partie ? » : retour arrière, nouvelle partie, actualisation */
+let inGame = false, quitAction = null;
+function askQuit(action) {
+  quitAction = action;
+  showModal(`<h2>Quitter la partie ?</h2><p>La partie en cours sera perdue.</p>` +
+    `<div class="ctl"><button class="btn" id="q-no">Continuer</button><button class="btn primary" id="q-yes">Quitter</button></div>`);
+  $('q-no').onclick = () => { hideModal(); render(); if (G.turn === 'e' && !G.over) setTimeout(aiMove, 700); };
+  $('q-yes').onclick = () => { inGame = false; const a = quitAction; quitAction = null; a(); };
+}
+window.addEventListener('beforeunload', e => { if (inGame && !G.over) { e.preventDefault(); e.returnValue = ''; } });
+window.addEventListener('popstate', () => {
+  if (!inGame || G.over) return;
+  history.pushState({ g: 1 }, '');
+  if (!modalOpen) askQuit(restart);
+});
+
 /* Relance : jusqu'à deux cartes changées avant le premier round */
 let mullSel = [];
 function intro() {
@@ -709,6 +725,7 @@ function intro() {
       drawCards(G, 'p', 1);
     }
     mullSel = [];
+    inGame = true; history.pushState({ g: 1 }, '');
     hideModal(); startMusic(); render(); if (G.turn === 'e') setTimeout(aiMove, 700);
   };
   render();
@@ -775,7 +792,7 @@ $('modal').addEventListener('click', e => {
     hideModal(); sfxCard(); afterAction();
   }
 });
-$('b-new').onclick = restart;
+$('b-new').onclick = () => { if (inGame && !G.over && !modalOpen) askQuit(restart); else restart(); };
 $('b-rules').onclick = () => {
   if (modalOpen) return;
   showModal(`${RULES}<button class="btn primary" id="m-close">Fermer</button>`);
