@@ -51,7 +51,7 @@ h2{font:700 20px var(--f-display);letter-spacing:.06em;color:var(--gold);margin:
 .card .s{position:absolute;top:2px;left:2px;min-width:18px;height:18px;padding:0 2px;box-sizing:border-box;display:grid;place-items:center;background:rgba(21,17,14,.88);border:1px solid var(--gold);border-radius:9px;font:700 11px var(--f-display);line-height:1;font-variant-numeric:tabular-nums}
 .card .n{position:absolute;left:0;right:0;bottom:0;padding:8px 2px 12px;background:linear-gradient(transparent,rgba(0,0,0,.88));font-size:7px;line-height:1.05;text-align:center;color:var(--bone);overflow:hidden;max-height:34px}
 .card .sigs{position:absolute;left:0;right:0;bottom:1px;z-index:1;display:flex;justify-content:center;gap:2px;pointer-events:none}
-.card .sig{width:13px;height:13px;padding:2px;box-sizing:border-box;border-radius:50%;background:rgba(21,17,14,.92);border:1px solid var(--gold);color:var(--gold);display:grid;place-items:center}
+.card .sig{width:13px;height:13px;padding:2px;box-sizing:border-box;border-radius:50%;background:rgba(21,17,14,.92);border:1px solid var(--c,var(--gold));color:var(--c,var(--gold));display:grid;place-items:center}
 .card .sig svg{width:100%;height:100%;display:block}
 .card .t{display:none}
 .big{width:70px;height:100px}
@@ -81,10 +81,17 @@ h2{font:700 20px var(--f-display);letter-spacing:.06em;color:var(--gold);margin:
 .grp[open] summary::before{content:'▾ '}
 .grpbody{padding:4px 2px 8px}
 .grpbody p{margin:0 0 6px}
+.c-close{--c:#e0604a}
+.c-ranged{--c:#4f8fe0}
+.c-siege{--c:#a77de0}
+.c-ab{--c:#2fbfa6}
+.c-hero{--c:#f2c94c}
+.c-spec{--c:#e0559c}
+.c-wx{--c:#8fe3f5}
 .sigtab{width:100%;border-collapse:collapse;font-size:14px}
 .sigtab td{border-top:1px solid var(--line);padding:6px 4px;vertical-align:top}
 .sigtab td:first-child{width:44px;white-space:nowrap}
-.sigtab .ico{width:18px;height:18px;color:var(--gold);margin-right:2px}
+.sigtab .ico{width:18px;height:18px;color:var(--c,var(--gold));margin-right:2px}
 .fac{display:flex;flex-direction:column;gap:8px}
 .fac .btn{text-align:left;padding:10px 14px}
 .fac small{font-weight:400;color:var(--mute)}
@@ -476,7 +483,7 @@ function sigKeys(c) {
   if (c.agile) k.push('agile');
   return k;
 }
-const sigHtml = c => `<span class="sigs" aria-hidden="true">${sigKeys(c).map(k => `<span class="sig"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">${SIG_SVG[k]}</svg></span>`).join('')}</span>`;
+const sigHtml = c => `<span class="sigs" aria-hidden="true">${sigKeys(c).map(k => `<span class="sig ${SIG_CAT[k] || 'c-ab'}"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">${SIG_SVG[k]}</svg></span>`).join('')}</span>`;
 
 function cardHtml(c, val, cls, attrs, vc) {
   const k = c.kind === 'unit' ? c.row : 'sp';
@@ -719,7 +726,9 @@ function finishRound() {
   };
 }
 
-const ico = k => `<svg class="ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">${SIG_SVG[k]}</svg>`;
+/* Couleur par catégorie : rangées, capacités, héros, spéciales, météo */
+const SIG_CAT = { close: 'c-close', ranged: 'c-ranged', siege: 'c-siege', hero: 'c-hero', horn: 'c-spec', scorch: 'c-spec', decoy: 'c-spec', mardroeme: 'c-spec', frost: 'c-wx', fog: 'c-wx', rain: 'c-wx', sun: 'c-wx' };
+const ico = k => `<svg class="ico ${SIG_CAT[k] || 'c-ab'}" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">${SIG_SVG[k]}</svg>`;
 const SIG_ROWS = [
   [['close'], 'Mêlée (épée)', 'Combat au corps-à-corps. Bordure rouge.', 'Fantassin, Piquier, Cavalier'],
   [['ranged'], 'Distance (arc)', 'Combat à distance. Bordure bleue.', 'Archer, Arbalétrier, Apothicaire'],
