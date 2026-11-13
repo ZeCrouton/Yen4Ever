@@ -35,7 +35,7 @@ h2{font:700 20px var(--f-display);letter-spacing:.06em;color:var(--gold);margin:
 .pl .tot{font:700 28px var(--f-display);font-variant-numeric:tabular-nums}
 .gem{display:inline-block;width:9px;height:9px;transform:rotate(45deg);background:var(--blood);margin:0 7px 0 2px}
 .gem.off{background:transparent;border:1px solid var(--mute)}
-.side{display:flex;flex-direction:column;gap:4px}
+.side{display:flex;flex-direction:column;gap:4px;scroll-margin-top:72px}
 .row{display:grid;grid-template-columns:36px 40px minmax(0,1fr);gap:6px;align-items:stretch;background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:4px;min-height:68px}
 .row.wx{background:linear-gradient(rgba(127,166,189,.2),rgba(127,166,189,.2)),var(--panel);border-color:var(--frost)}
 .rs{display:flex;flex-direction:column;align-items:center;justify-content:center;font:700 19px var(--f-display);font-variant-numeric:tabular-nums}
@@ -577,6 +577,13 @@ function cardInfo(c) {
   return `<b>${head}</b><br>${lines.join('<br>')}`;
 }
 
+/* Vue : on se place sur son plateau quand c'est à soi de jouer, sur celui de l'adversaire sinon */
+let viewTurn = null;
+function focusTurn() {
+  const el = $(G.turn === 'p' ? 'side-p' : 'side-e');
+  if (el && !G.over) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
 function render() {
   $('hud').innerHTML = plHtml('e', 'Adversaire') + plHtml('p', 'Vous');
   $('side-e').innerHTML = ROW_ORDER.e.map(r => rowHtml('e', r)).join('');
@@ -604,6 +611,7 @@ function render() {
     sc && sc.kind === 'decoy' ? 'Touchez une de vos unités pour la reprendre en main.' :
     sc && sc.kind === 'mardroeme' ? 'Touchez un de vos Berserkers sur le plateau.' :
     sc && sc.agile ? 'Touchez la rangée Mêlée ou Distance.' : sc ? 'Touchez à nouveau la carte pour la jouer.' : 'Touchez une carte pour la jouer.';
+  if (viewTurn !== G.turn && !G.over && !modalOpen) { viewTurn = G.turn; focusTurn(); }
 }
 
 function pushLog(m) { G.logs.push(m); if (G.logs.length > 3) G.logs.shift(); }
