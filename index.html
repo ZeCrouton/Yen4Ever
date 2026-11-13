@@ -546,7 +546,7 @@ function rowHtml(side, row) {
     const v = cardStr(G, side, row, c);
     const vc = c.kind === 'unit' && !c.hero ? (v > c.str ? 'up' : v < c.str ? 'down' : '') : '';
     const tgt = side === 'p' && sc && ((sc.kind === 'decoy' && c.kind === 'unit' && !c.hero) || (sc.kind === 'mardroeme' && c.ab === 'berserk'));
-    const attrs = side === 'p' ? `data-act="${sc && sc.kind === 'mardroeme' ? 'mard' : 'decoy'}" data-id="${c.id}"` : `data-insp="${c.id}"`;
+    const attrs = side === 'p' && tgt ? `data-act="${sc.kind === 'mardroeme' ? 'mard' : 'decoy'}" data-id="${c.id}"` : `data-insp="${c.id}"`;
     return cardHtml(c, v, tgt ? 'target' : '', attrs, vc);
   }).join('');
   const agT = side === 'p' && sc && sc.agile && row !== 'siege';
@@ -600,9 +600,10 @@ function cardInfo(c) {
 
 /* Aperçu agrandi d'une carte adverse, avec ses capacités. Touchez pour fermer. */
 function showInspect(id) {
-  const c = ROWS.flatMap(r => G.board.e[r]).find(x => x.id === id);
+  const c = [...ROWS.flatMap(r => G.board.e[r]), ...ROWS.flatMap(r => G.board.p[r])].find(x => x.id === id);
   if (!c) return;
-  const v = cardStr(G, 'e', c.row, c);
+  const side = G.board.p[c.row].includes(c) ? 'p' : 'e';
+  const v = cardStr(G, side, c.row, c);
   $('inspect').innerHTML = `<div class="insp-card">${cardHtml(c, v, 'big', '')}</div>` +
     `<div class="insp-txt">${cardInfo(c)}<br><span class="insp-hint">Touchez pour fermer</span></div>`;
   $('inspect').hidden = false;
