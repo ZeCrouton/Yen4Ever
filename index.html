@@ -613,11 +613,13 @@ function render() {
   if (selEl) selEl.scrollIntoView({ block: 'nearest', inline: 'nearest' });
   $('b-pass').disabled = !mine;
   const sc = selCard();
-  $('hint').textContent = !mine ? (G.over ? '' : 'L’adversaire réfléchit…') :
+  const turnTxt = G.over ? '' : mine ? '<b>À vous de jouer</b>' : '<b>À l’adversaire de jouer</b>';
+  const hintAct = !mine || G.over ? '' :
     sc && sc.kind === 'horn' ? 'Touchez l’emplacement Cor d’une de vos rangées.' :
     sc && sc.kind === 'decoy' ? 'Touchez une de vos unités pour la reprendre en main.' :
     sc && sc.kind === 'mardroeme' ? 'Touchez un de vos Berserkers sur le plateau.' :
     sc && sc.agile ? 'Touchez la rangée Mêlée ou Distance.' : sc ? 'Touchez à nouveau la carte pour la jouer.' : 'Touchez une carte pour la jouer.';
+  $('hint').innerHTML = [turnTxt, hintAct].filter(Boolean).join(' · ');
   if (viewTurn !== G.turn && !G.over && !modalOpen) { viewTurn = G.turn; focusTurn(); }
   persist();
 }
