@@ -1003,10 +1003,10 @@ $('b-rules').onclick = () => {
 
 
 /* ===== Musique de fond ===== */
-const TRACKS = ['music/track-a.mp3', 'music/track-b.mp3'];
+const TRACKS = ['music/track-a.mp3', 'music/track-c.m4a', 'music/track-d.m4a'];
 const bgm = new Audio();
 bgm.volume = 0.35;
-let trackIdx = Math.random() < 0.5 ? 0 : 1;
+let trackIdx = Math.floor(Math.random() * TRACKS.length);
 let muted = false;
 try { muted = localStorage.getItem('gwent-muted') === '1'; } catch (e) {}
 function paintMute() {
