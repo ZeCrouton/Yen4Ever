@@ -135,7 +135,7 @@ h2{font:700 20px var(--f-display);letter-spacing:.06em;color:var(--gold);margin:
   <div class="wxbar" id="wx"></div>
   <div class="side" id="side-p"></div>
   <div class="log" id="log"></div>
-  <div class="ctl"><button class="btn primary" id="b-pass">Passer</button><span class="hint" id="hint"></span><span class="tools"><button class="btn" id="b-opt">Options</button><button class="btn" id="b-new">Nouvelle partie</button></span></div>
+  <div class="ctl"><button class="btn primary" id="b-pass">Passer</button><span class="hint" id="hint"></span><span class="tools"><button class="btn" id="b-full">Plein écran</button><button class="btn" id="b-opt">Options</button><button class="btn" id="b-new">Nouvelle partie</button></span></div>
   <div id="inspect" class="inspect" hidden></div>
   <div class="hand" id="hand"></div>
 </div>
@@ -971,6 +971,20 @@ $('modal').addEventListener('click', e => {
   }
 });
 $('b-new').onclick = () => { if (inGame && !G.over && !modalOpen) askQuit(restart); else restart(); };
+/* Plein écran (si le navigateur le permet ; iPhone Safari ne le propose pas) */
+const fsEl = () => document.fullscreenElement || document.webkitFullscreenElement;
+function paintFull() {
+  const b = $('b-full');
+  if (!(document.fullscreenEnabled || document.webkitFullscreenEnabled)) { b.hidden = true; return; }
+  b.textContent = fsEl() ? 'Quitter le plein écran' : 'Plein écran';
+}
+$('b-full').onclick = () => {
+  if (fsEl()) (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+  else (document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen).call(document.documentElement);
+};
+document.addEventListener('fullscreenchange', paintFull);
+document.addEventListener('webkitfullscreenchange', paintFull);
+paintFull();
 $('b-opt').onclick = () => {
   if (modalOpen) return;
   showModal(`<h2>Options</h2><label class="opt"><input type="checkbox" id="o-names" ${namesOn ? 'checked' : ''}> Nom de l’adversaire</label><button class="btn primary" id="m-close">Fermer</button>`);
