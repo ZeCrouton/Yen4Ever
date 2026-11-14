@@ -567,7 +567,7 @@ function plHtml(side, name) {
 const ABILITY_TXT = {
   bond: 'Lien : force × le nombre de cartes identiques qui se suivent dans la rangée (×2, ×3…).',
   morale: 'Moral : +1 aux autres unités de sa rangée.',
-  spy: 'Espion : posé chez l’adversaire, sa force compte pour lui ; vous piochez 2 cartes.',
+  spy: 'Espion : se pose dans la rangée de même nom chez l’adversaire. Sa force augmente son score, pas le vôtre. En échange, vous piochez 2 cartes.',
   medic: 'Médic : relève une unité de votre défausse (hors Héros et spéciales).',
   muster: 'Sursaut : pose aussitôt toutes les cartes du même nom (main et deck).',
   berserk: 'Berserker : transformé en ours de combat (force 8) par le Mardroeme.'
@@ -762,7 +762,7 @@ const SIG_ROWS = [
   [['ranged'], 'Distance (arc)', 'Combat à distance. Bordure bleue.', 'Archer, Arbalétrier, Apothicaire'],
   [['siege'], 'Siège (catapulte)', 'Engins de siège. Bordure violette.', 'Catapulte, Baliste, Bélier'],
   [['bond'], 'Lien (deux cercles)', 'Cartes identiques qui se suivent : force × leur nombre (×2 pour deux, ×3 pour trois).', 'Hallebardier, Arbalétrier'],
-  [['spy'], 'Espion (œil)', 'Posé chez l’adversaire ; sa force compte pour lui ; vous piochez 2 cartes.', 'Éclaireur, Infiltré, Émissaire'],
+  [['spy'], 'Espion (œil)', 'Se pose dans la rangée de même nom chez l’adversaire. Sa force augmente son score, pas le vôtre. En échange, vous piochez 2 cartes.', 'Éclaireur, Infiltré, Émissaire'],
   [['medic'], 'Médic (croix)', 'Relève une unité de votre défausse (hors Héros et spéciales).', 'Guérisseuse, Apothicaire'],
   [['morale'], 'Moral (étendard)', '+1 aux autres unités de sa rangée.', 'Porte-étendard, Barde'],
   [['muster'], 'Sursaut (trois cercles)', 'Pose aussitôt toutes les cartes du même nom (main et deck).', 'Milicien'],
@@ -805,6 +805,15 @@ grp('Déroulement du match', `<ul>
 <li><b>Tour</b> : jouez exactement une carte ou passez. Les forces de chaque rangée s’additionnent ; le plus grand total l’emporte. Aucune pioche automatique aux manches 2 et 3.</li>
 </ul>`) +
 grp('Les 3 rangées et l’adversaire', `
+<p><b>Comment jouer une carte</b></p>
+<ul>
+<li>Touchez une carte de votre main pour l’agrandir, puis touchez-la à nouveau pour la poser.</li>
+<li>Elle va automatiquement dans sa rangée. Une carte Agile : touchez ensuite la rangée Mêlée ou Distance de votre choix.</li></ul>
+<p><b>Les trois rangées</b></p>
+<ul>
+<li><b>Mêlée</b> (bordure rouge) : combattants au corps-à-corps, comme le Fantassin, le Piquier ou le Cavalier. Touchée par le Gel mordant.</li>
+<li><b>Distance</b> (bordure bleue) : tireurs, comme l’Archer ou l’Arbalétrier. Touchée par le Brouillard épais.</li>
+<li><b>Siège</b> (bordure violette) : engins, comme la Catapulte, la Baliste ou le Bélier. Jamais Agile. Touchée par la Pluie torrentielle.</li></ul>
 <p><b>Chaque camp a ses 3 rangées</b> : Mêlée, Distance, Siège. L’adversaire est en haut, vous êtes en bas. Chaque rangée a son propre total, affiché à gauche.</p>
 <p><b>Les cartes ne se battent pas entre elles.</b> Vos unités ne détruisent jamais celles de l’adversaire en les touchant. Chaque camp additionne seulement ses propres rangées, et on compare les deux scores à la fin.</p>
 <p><b>Où se pose une carte ?</b> Une unité va dans sa rangée, indiquée par son sigle et la couleur de sa bordure (rouge = Mêlée, bleu = Distance, violet = Siège). Les cartes Agiles choisissent Mêlée ou Distance.</p>
@@ -816,7 +825,7 @@ grp('Les 3 rangées et l’adversaire', `
 <ul>
 <li><b>Météo</b> : touche la même rangée des deux camps. Le Gel mordant ramène à 1 la force de toutes les cartes de Mêlée, les vôtres comme les siennes. Utile quand l’adversaire a beaucoup de points dans cette rangée et vous peu.</li>
 <li><b>Brasier</b> : regarde les deux plateaux et détruit l’unité la plus forte (ou toutes celles à égalité), chez lui comme chez vous. Les Héros sont épargnés.</li>
-<li><b>Espion</b> : se pose dans la rangée de l’adversaire. Sa force augmente le score de l’adversaire, mais vous piochez 2 cartes.</li></ul>
+<li><b>Espion</b> : se pose dans la rangée de même nom chez l’adversaire. Sa force augmente son score, pas le vôtre. En échange, vous piochez 2 cartes.</li></ul>
 <p><b>Exemple</b> : l’adversaire a 20 en Mêlée, vous avez 6. Vous jouez le Gel mordant : toutes les cartes de Mêlée valent 1. Il tombe à 4 cartes × 1 = 4, vous aussi à 2 cartes × 1 = 2. Il perd 16 points, vous en perdez 4. Les Héros et les cartes d’autres rangées ne bougent pas.</p>
 <p><b>Protection</b> : les Héros (cadre doré) ignorent météo, cor et Brasier.</p>${sigTab(['close','ranged','siege'])}`) +
 grp('Capacités des unités', `<p>Ces capacités se déclenchent quand la carte est posée ou tant qu’elle est sur le plateau.</p>${sigTab(['bond','morale','spy','medic','muster','agile','hero'])}`) +
