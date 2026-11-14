@@ -79,6 +79,7 @@ h2{font:700 20px var(--f-display);letter-spacing:.06em;color:var(--gold);margin:
 .cardinfo b{font:700 14px var(--f-display);color:var(--gold);letter-spacing:.03em}
 .hand .card{cursor:pointer}
 .hand .card.sel{transform:scale(1.87);transform-origin:50% 100%;z-index:2;border-color:var(--gold);box-shadow:0 0 0 2px var(--gold),0 6px 14px rgba(0,0,0,.6)}
+.handrow.zoom{padding-top:104px;padding-left:max(40px,env(safe-area-inset-left,0px));padding-right:max(40px,env(safe-area-inset-right,0px))}
 .hand.off .card{opacity:.55;cursor:not-allowed}
 .grp{border-top:1px solid var(--line);padding:6px 0}
 .grp summary{cursor:pointer;font:700 14px var(--f-display);letter-spacing:.04em;color:var(--gold);padding:6px 2px;list-style:none}
@@ -647,7 +648,7 @@ function render() {
   const shown = selCard();
   const oldRow = $('hand').querySelector('.handrow');
   const keepLeft = oldRow ? oldRow.scrollLeft : 0;
-  $('hand').innerHTML = `<div class="handrow">${G.hands.p.map(c =>
+  $('hand').innerHTML = `<div class="handrow${sel ? ' zoom' : ''}">${G.hands.p.map(c =>
     cardHtml(c, symOf(c), 'big' + (c.id === sel ? ' sel' : ''), `data-hand="${c.id}"`)).join('') || '<span class="sm">Plus de cartes.</span>'}</div>` +
     `<div class="cardinfo">${shown ? cardInfo(shown) : ''}</div>`;
   const newRow = $('hand').querySelector('.handrow');
