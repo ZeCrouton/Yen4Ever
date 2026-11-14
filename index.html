@@ -549,7 +549,7 @@ function rowHtml(side, row) {
     const attrs = side === 'p' && tgt ? `data-act="${sc.kind === 'mardroeme' ? 'mard' : 'decoy'}" data-id="${c.id}"` : `data-insp="${c.id}"`;
     return cardHtml(c, v, tgt ? 'target' : '', attrs, vc);
   }).join('');
-  const agT = side === 'p' && sc && sc.agile && row !== 'siege';
+  const agT = side === 'p' && rowOK(sc, row);
   return `<div class="row ${G.weather[row] ? 'wx' : ''} ${agT ? 'target' : ''}" ${side === 'p' ? `data-prow="${row}"` : ''}>` +
     `<div class="rs">${rowScore(G, side, row)}<small>${ROW_FR[row]}</small></div>` +
     `<div class="horn ${horn ? 'on' : ''} ${hornT ? 'target' : ''}" data-act="horn" data-side="${side}" data-row="${row}">${horn ? '×2' : 'Cor'}</div>` +
@@ -644,7 +644,10 @@ function render() {
     sc && sc.kind === 'horn' ? 'Touchez l’emplacement Cor d’une de vos rangées.' :
     sc && sc.kind === 'decoy' ? 'Touchez une de vos unités pour la reprendre en main.' :
     sc && sc.kind === 'mardroeme' ? 'Touchez un de vos Berserkers sur le plateau.' :
-    sc && sc.agile ? 'Touchez la rangée Mêlée ou Distance.' : sc ? 'Touchez à nouveau la carte pour la jouer.' : 'Touchez une carte pour la jouer.';
+    sc && sc.agile ? 'Touchez la rangée Mêlée ou Distance.' :
+    sc && sc.kind === 'unit' ? `Touchez la rangée ${ROW_FR[sc.row]} pour la poser.` :
+    sc && sc.kind === 'weather' && sc.w !== 'clear' ? `Touchez la rangée ${ROW_FR[sc.w]} pour la jouer.` :
+    sc ? 'Touchez à nouveau la carte pour la jouer.' : 'Touchez une carte pour la jouer.';
   $('hint').innerHTML = [turnTxt, hintAct].filter(Boolean).join(' · ');
   if (viewTurn !== G.turn && !G.over && !modalOpen) { viewTurn = G.turn; focusTurn(); }
   persist();
@@ -682,6 +685,14 @@ function showModal(html) {
   $('modal').hidden = false;
 }
 function hideModal() { modalOpen = false; $('modal').hidden = true; }
+
+/* Une rangée est-elle une cible valide pour la carte sélectionnée ? */
+function rowOK(sc, pr) {
+  if (!sc) return false;
+  if (sc.kind === 'unit') return sc.agile ? pr !== 'siege' : pr === sc.row;
+  if (sc.kind === 'weather') return sc.w !== 'clear' && pr === sc.w;
+  return false;
+}
 
 function humanPlay(id, arg) {
   const card = G.hands.p.find(x => x.id === id);
@@ -886,9 +897,9 @@ function restart() { hideModal(); factionPick(); }
 $('app').addEventListener('click', e => {
   if (G.turn !== 'p' || G.over || modalOpen) return;
   const sc0 = sel && selCard();
-  if (sc0 && sc0.agile && !e.target.closest('[data-hand]')) {
+  if (sc0 && !e.target.closest('[data-hand]')) {
     const rw = e.target.closest('.row[data-prow]');
-    if (rw && rw.dataset.prow !== 'siege') { const id = sel; sel = null; return humanPlay(id, rw.dataset.prow); }
+    if (rw && rowOK(sc0, rw.dataset.prow)) { const id = sel; sel = null; return humanPlay(id, rw.dataset.prow); }
   }
   const insp = e.target.closest('[data-insp]');
   if (insp) { showInspect(+insp.dataset.insp); return; }
@@ -898,11 +909,11 @@ $('app').addEventListener('click', e => {
     const id = +el.dataset.hand;
     const c = G.hands.p.find(x => x.id === id);
     if (!c) return;
-    const special = c.kind === 'horn' || c.kind === 'decoy' || c.kind === 'mardroeme' || c.agile;
+    const instant = c.kind === 'scorch' || (c.kind === 'weather' && c.w === 'clear');
     if (sel === id) {
       sel = null;
-      if (special) return render();
-      return humanPlay(id);
+      if (instant) return humanPlay(id);
+      return render();
     }
     sel = id;
     return render();
