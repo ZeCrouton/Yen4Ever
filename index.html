@@ -645,8 +645,6 @@ function render() {
     sc && sc.kind === 'decoy' ? 'Touchez une de vos unités pour la reprendre en main.' :
     sc && sc.kind === 'mardroeme' ? 'Touchez un de vos Berserkers sur le plateau.' :
     sc && sc.agile ? 'Touchez la rangée Mêlée ou Distance.' :
-    sc && sc.kind === 'unit' ? `Touchez la rangée ${ROW_FR[sc.row]} pour la poser.` :
-    sc && sc.kind === 'weather' && sc.w !== 'clear' ? `Touchez la rangée ${ROW_FR[sc.w]} pour la jouer.` :
     sc ? 'Touchez à nouveau la carte pour la jouer.' : 'Touchez une carte pour la jouer.';
   $('hint').innerHTML = [turnTxt, hintAct].filter(Boolean).join(' · ');
   if (viewTurn !== G.turn && !G.over && !modalOpen) { viewTurn = G.turn; focusTurn(); }
@@ -688,11 +686,10 @@ function hideModal() { modalOpen = false; $('modal').hidden = true; }
 
 /* Une rangée est-elle une cible valide pour la carte sélectionnée ? */
 function rowOK(sc, pr) {
-  if (!sc) return false;
-  if (sc.kind === 'unit') return sc.agile ? pr !== 'siege' : pr === sc.row;
-  if (sc.kind === 'weather') return sc.w !== 'clear' && pr === sc.w;
-  return false;
+  return !!sc && sc.agile && pr !== 'siege';
 }
+/* Cartes qui attendent une cible sur le plateau (rangée, cor, leurre, mardroeme) */
+const needsTarget = c => c.agile || c.kind === 'horn' || c.kind === 'decoy' || c.kind === 'mardroeme';
 
 function humanPlay(id, arg) {
   const card = G.hands.p.find(x => x.id === id);
@@ -904,16 +901,15 @@ $('app').addEventListener('click', e => {
   const insp = e.target.closest('[data-insp]');
   if (insp) { showInspect(+insp.dataset.insp); return; }
   const el = e.target.closest('[data-act],[data-hand]');
-  if (!el) return;
+  if (!el) { if (sel) { sel = null; render(); } return; }
   if (el.dataset.hand) {
     const id = +el.dataset.hand;
     const c = G.hands.p.find(x => x.id === id);
     if (!c) return;
-    const instant = c.kind === 'scorch' || (c.kind === 'weather' && c.w === 'clear');
     if (sel === id) {
+      if (needsTarget(c)) return;
       sel = null;
-      if (instant) return humanPlay(id);
-      return render();
+      return humanPlay(id);
     }
     sel = id;
     return render();
@@ -923,6 +919,8 @@ $('app').addEventListener('click', e => {
     const id = sel; sel = null; humanPlay(id, el.dataset.row);
   } else if ((el.dataset.act === 'decoy' || el.dataset.act === 'mard') && el.classList.contains('target')) {
     const id = sel; sel = null; humanPlay(id, +el.dataset.id);
+  } else {
+    sel = null; render();
   }
 });
 
