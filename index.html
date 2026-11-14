@@ -271,7 +271,7 @@ function play(st, side, id, arg) {
   const hand = st.hands[side];
   const card = hand.splice(hand.findIndex(x => x.id === id), 1)[0];
   const opp = side === 'p' ? 'e' : 'p';
-  const who = side === 'p' ? 'Vous jouez' : OPP_SUJ() + ' joue';
+  const who = side === 'p' ? 'Vous avez joué' : OPP_SUJ() + ' a joué';
   let msg = `${who} ${card.name}.`;
   if (card.kind === 'unit') {
     if (card.agile && arg) card.row = arg;
