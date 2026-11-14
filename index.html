@@ -573,16 +573,16 @@ const ABILITY_TXT = {
   berserk: 'Berserker : transformé en ours de combat (force 8) par le Mardroeme.'
 };
 const KIND_TXT = {
-  horn: 'Cor de guerre : double la force d’une rangée de votre choix.',
-  scorch: 'Brasier : détruit les unités les plus fortes du plateau (Héros épargnés).',
-  decoy: 'Leurre : reprend une de vos unités en main.',
-  mardroeme: 'Mardroeme : transforme les Berserkers d’une rangée en ours de combat.'
+  horn: 'Cor de guerre : double la force d’une rangée de votre choix (une seule fois par rangée).',
+  scorch: 'Brasier : détruit les unités les plus fortes du plateau, dans les deux camps. Les Héros sont épargnés.',
+  decoy: 'Leurre : vous reprenez une de vos unités en main, et le Leurre prend sa place sur le plateau.',
+  mardroeme: 'Mardroeme : tous les Berserkers d’une rangée choisie deviennent des ours de combat (force 8).'
 };
 const WX_TXT = {
-  close: 'Gel mordant : ramène à 1 la force de la Mêlée, pour les deux camps.',
-  ranged: 'Brouillard épais : ramène à 1 la force de la Distance, pour les deux camps.',
-  siege: 'Pluie torrentielle : ramène à 1 la force du Siège, pour les deux camps.',
-  clear: 'Ciel dégagé : annule toute la météo.'
+  close: 'Gel mordant : toutes les cartes de Mêlée, dans les deux camps, ne valent plus que 1.',
+  ranged: 'Brouillard épais : toutes les cartes de Distance, dans les deux camps, ne valent plus que 1.',
+  siege: 'Pluie torrentielle : toutes les cartes de Siège, dans les deux camps, ne valent plus que 1.',
+  clear: 'Ciel dégagé : annule toute la météo en cours.'
 };
 function cardInfo(c) {
   if (c.kind !== 'unit') {
@@ -641,11 +641,11 @@ function render() {
   const sc = selCard();
   const turnTxt = G.over ? '' : mine ? '<b>À vous de jouer</b>' : '<b>À l’adversaire de jouer</b>';
   const hintAct = !mine || G.over ? '' :
-    sc && sc.kind === 'horn' ? 'Touchez l’emplacement Cor d’une de vos rangées.' :
-    sc && sc.kind === 'decoy' ? 'Touchez une de vos unités pour la reprendre en main.' :
-    sc && sc.kind === 'mardroeme' ? 'Touchez un de vos Berserkers sur le plateau.' :
-    sc && sc.agile ? 'Touchez la rangée Mêlée ou Distance.' :
-    sc ? 'Touchez à nouveau la carte pour la jouer.' : 'Touchez une carte pour la jouer.';
+    sc && sc.kind === 'horn' ? 'Touchez le Cor d’une de vos rangées pour doubler sa force. Touchez ailleurs pour annuler.' :
+    sc && sc.kind === 'decoy' ? 'Touchez une de vos unités sur le plateau : elle retourne dans votre main. Touchez ailleurs pour annuler.' :
+    sc && sc.kind === 'mardroeme' ? 'Touchez un de vos Berserkers : toute sa rangée se transforme en ours. Touchez ailleurs pour annuler.' :
+    sc && sc.agile ? 'Touchez la rangée Mêlée ou Distance pour la poser. Touchez ailleurs pour annuler.' :
+    sc ? 'Touchez la carte agrandie pour la jouer. Touchez ailleurs pour annuler.' : 'Touchez une carte de votre main pour l’agrandir.';
   $('hint').innerHTML = [turnTxt, hintAct].filter(Boolean).join(' · ');
   if (viewTurn !== G.turn && !G.over && !modalOpen) { viewTurn = G.turn; focusTurn(); }
   persist();
@@ -774,17 +774,17 @@ const SIG_ROWS = [
   [['medic'], 'Médic (croix)', 'Relève une unité de votre défausse (hors Héros et spéciales).', 'Guérisseuse, Apothicaire'],
   [['morale'], 'Moral (étendard)', '+1 aux autres unités de sa rangée.', 'Porte-étendard, Barde'],
   [['muster'], 'Sursaut (trois cercles)', 'Pose aussitôt toutes les cartes du même nom (main et deck).', 'Milicien'],
-  [['agile'], 'Agile (flèches)', 'Se place au choix en Mêlée ou en Distance.', 'Voltigeur, Chasseur'],
+  [['agile'], 'Agile (flèches)', 'Se pose au choix en Mêlée ou en Distance : touchez la rangée de votre choix. Ensuite, elle ne bouge plus.', 'Voltigeur, Chasseur'],
   [['hero'], 'Héros (étoile)', 'Force fixe ; immunisé météo, cor, brasier et capacités adverses. Cadre doré.', 'Capitaine Aldric, Mage Vessa, Maître Ormund, Émissaire'],
   [['berserk'], 'Berserker (hache)', 'Transformé en ours de combat (force 8) par le Mardroeme.', 'Berserker'],
-  [['mardroeme'], 'Mardroeme (rune)', 'Transforme les Berserkers de la rangée choisie.', 'Mardroeme'],
-  [['horn'], 'Cor de guerre (cor)', 'Double la force d’une rangée.', 'Cor de guerre'],
-  [['scorch'], 'Brasier (flamme)', 'Détruit les unités les plus fortes du plateau.', 'Brasier'],
-  [['decoy'], 'Leurre (bûche)', 'Reprend une de vos unités en main.', 'Leurre'],
-  [['frost'], 'Gel mordant (flocon)', 'Ramène la force de la Mêlée à 1 pour les deux camps.', 'Gel mordant'],
-  [['fog'], 'Brouillard épais (lignes)', 'Ramène la force de la Distance à 1.', 'Brouillard épais'],
-  [['rain'], 'Pluie torrentielle (goutte)', 'Ramène la force du Siège à 1.', 'Pluie torrentielle'],
-  [['sun'], 'Ciel dégagé (soleil)', 'Annule toutes les cartes météo.', 'Ciel dégagé'],
+  [['mardroeme'], 'Mardroeme (rune)', 'Tous les Berserkers d’une rangée choisie deviennent des ours de combat.', 'Mardroeme'],
+  [['horn'], 'Cor de guerre (cor)', 'Double la force d’une rangée, une fois par rangée. Touchez la rangée pour le poser.', 'Cor de guerre'],
+  [['scorch'], 'Brasier (flamme)', 'Détruit les unités les plus fortes du plateau, dans les deux camps. Les Héros sont épargnés.', 'Brasier'],
+  [['decoy'], 'Leurre (bûche)', 'Vous reprenez une de vos unités en main, et le Leurre prend sa place.', 'Leurre'],
+  [['frost'], 'Gel mordant (flocon)', 'Toutes les cartes de Mêlée, dans les deux camps, ne valent plus que 1.', 'Gel mordant'],
+  [['fog'], 'Brouillard épais (lignes)', 'Toutes les cartes de Distance, dans les deux camps, ne valent plus que 1.', 'Brouillard épais'],
+  [['rain'], 'Pluie torrentielle (goutte)', 'Toutes les cartes de Siège, dans les deux camps, ne valent plus que 1.', 'Pluie torrentielle'],
+  [['sun'], 'Ciel dégagé (soleil)', 'Annule toute la météo en cours. Touchez la carte pour la jouer.', 'Ciel dégagé'],
 ];
 const sigTab = keys => `<table class="sigtab"><tbody>` + SIG_ROWS.filter(r => keys.includes(r[0][0])).map(([k, n, d, ex]) =>
   `<tr><td>${k.map(ico).join('')}</td><td><b>${n}</b><br>${d}<br><i>Exemples : ${ex}</i></td></tr>`).join('') + `</tbody></table>`;
@@ -815,8 +815,11 @@ grp('Déroulement du match', `<ul>
 grp('Les 3 rangées et l’adversaire', `
 <p><b>Comment jouer une carte</b></p>
 <ul>
-<li>Touchez une carte de votre main pour l’agrandir, puis touchez-la à nouveau pour la poser.</li>
-<li>Elle va automatiquement dans sa rangée. Une carte Agile : touchez ensuite la rangée Mêlée ou Distance de votre choix.</li></ul>
+<li>Touchez une carte de votre main pour l’agrandir.</li>
+<li>Touchez-la à nouveau pour la jouer : une unité va dans sa rangée, une météo touche sa rangée.</li>
+<li>Une carte Agile demande de toucher la rangée Mêlée ou Distance de votre choix.</li>
+<li>Les cartes Cor, Leurre et Mardroeme demandent une cible sur le plateau, indiquée par le texte sous la main.</li>
+<li>Touchez ailleurs pour dézoomer la carte et annuler.</li></ul>
 <p><b>Les trois rangées</b></p>
 <ul>
 <li><b>Mêlée</b> (bordure rouge) : combattants au corps-à-corps, comme le Fantassin, le Piquier ou le Cavalier. Touchée par le Gel mordant.</li>
