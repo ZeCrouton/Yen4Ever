@@ -78,7 +78,7 @@ h2{font:700 20px var(--f-display);letter-spacing:.06em;color:var(--gold);margin:
 .cardinfo{min-height:44px;padding:4px max(16px,env(safe-area-inset-right,0px)) 10px max(16px,env(safe-area-inset-left,0px));font-size:14px;line-height:1.35;color:var(--bone);border-top:1px solid var(--line)}
 .cardinfo b{font:700 14px var(--f-display);color:var(--gold);letter-spacing:.03em}
 .hand .card{cursor:pointer}
-.hand .card.sel{transform:scale(1.56);transform-origin:50% 100%;z-index:2;border-color:var(--gold);box-shadow:0 0 0 2px var(--gold),0 6px 14px rgba(0,0,0,.6)}
+.hand .card.sel{transform:scale(1.87);transform-origin:50% 100%;z-index:2;border-color:var(--gold);box-shadow:0 0 0 2px var(--gold),0 6px 14px rgba(0,0,0,.6)}
 .hand.off .card{opacity:.55;cursor:not-allowed}
 .grp{border-top:1px solid var(--line);padding:6px 0}
 .grp summary{cursor:pointer;font:700 14px var(--f-display);letter-spacing:.04em;color:var(--gold);padding:6px 2px;list-style:none}
@@ -477,7 +477,7 @@ const $ = id => document.getElementById(id);
 const ROW_ORDER = { e: ['siege', 'ranged', 'close'], p: ['close', 'ranged', 'siege'] };
 const AB = { bond: 'Lien', spy: 'Espion', medic: 'Médic', morale: 'Moral', muster: 'Sursaut', berserk: 'Berserker' };
 const KIND_TAG = { horn: 'Cor', scorch: 'Brasier', decoy: 'Leurre', weather: 'Météo', mardroeme: 'Mardroeme' };
-const tagOf = c => c.kind !== 'unit' ? KIND_TAG[c.kind] : [c.hero ? 'Héros' : '', c.agile ? 'Agile' : ROW_FR[c.row]].filter(Boolean).join('·');
+const tagOf = c => c.kind !== 'unit' ? KIND_TAG[c.kind] : [c.hero ? 'Héros' : '', ROW_FR[c.row]].filter(Boolean).join('·');
 const symOf = c => c.kind === 'unit' ? c.str : c.kind === 'horn' ? '×2' : c.kind === 'scorch' ? '!!' : c.kind === 'decoy' ? '⇄' : c.kind === 'mardroeme' ? 'M' : c.w === 'clear' ? '0' : '=1';
 const selCard = () => G.hands.p.find(x => x.id === sel);
 
