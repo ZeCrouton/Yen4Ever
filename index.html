@@ -122,11 +122,13 @@ h2{font:700 20px var(--f-display);letter-spacing:.06em;color:var(--gold);margin:
 .box{background:var(--panel);border:1px solid var(--gold);max-width:440px;width:100%;padding:20px;border-radius:6px;display:flex;flex-direction:column;gap:12px;max-height:100%;overflow:auto}
 .box p,.box ul{margin:0}
 .box ul{padding-left:18px;display:flex;flex-direction:column;gap:4px;font-size:15px}
+.opt{display:flex;align-items:center;gap:10px;font-size:16px}
+.opt input{width:20px;height:20px}
 .score{font:700 34px var(--f-display);text-align:center;font-variant-numeric:tabular-nums}
 @media (prefers-reduced-motion:no-preference){.card{transition:transform .12s}}
 </style>
 <div id="app">
-  <div class="top"><div class="topin"><h1>Yen4Ever</h1><span class="tools"><button class="btn" id="b-rules">Règles</button><button class="btn" id="b-mute" aria-pressed="false">Son : on</button></span></div></div>
+  <div class="top"><div class="topin"><h1>Yen4Ever</h1><span class="tools"><button class="btn" id="b-rules">Règles</button><button class="btn" id="b-opt">Options</button><button class="btn" id="b-mute" aria-pressed="false">Son : on</button></span></div></div>
   <div class="hud" id="hud"></div>
   <div class="side" id="side-e"></div>
   <div class="wxbar" id="wx"></div>
@@ -144,6 +146,18 @@ const ROW_FR = { close: 'Mêlée', ranged: 'Distance', siege: 'Siège' };
 let UID = 1;
 
 const FAC = { nord: 'Royaumes du Nord', nilfgaard: 'Nilfgaard', skellige: 'Skellige' };
+/* Noms d'adversaires, selon sa faction (style univers The Witcher) */
+const NAMES = {
+  nord: ['Anselm Vanhoek', 'Gerhard Stoltz', 'Morvan Hengst', 'Tancred Lüdeke', 'Osric Brenne', 'Radovan Kessel', 'Dietrich Halvard'],
+  nilfgaard: ['Aurelio Scaravelli', 'Cassio Morrano', 'Tullio Benedetto', 'Orso Valcarra', 'Ettore Caravello'],
+  skellige: ['Eskil Ragnvald', 'Torvald Hakonsen', 'Sigurd Kjellar', 'Gunnar Ulfsson', 'Ottar Haldersen', 'Brand Ottesen', 'Halvar Rune']
+};
+let namesOn = true;
+try { namesOn = localStorage.getItem('gwent-names') !== '0'; } catch (e) {}
+const oppOn = () => (namesOn && G && G.oppName) || null;
+const OPP_NAME = () => oppOn() || 'Adversaire';
+const OPP_SUJ = () => oppOn() || 'L’adversaire';
+const OPP_DE = () => oppOn() || 'l’adversaire';
 const FAC_TXT = { nord: 'Pioche une carte à chaque manche gagnée.', nilfgaard: 'Remporte la manche en cas d’égalité.', skellige: 'Berserkers et Mardroeme ; 2 unités reviennent au début de la manche 3.' };
 const randFac = () => Object.keys(FAC)[Math.floor(Math.random() * 3)];
 
@@ -200,6 +214,7 @@ const emptyHorn = () => ({ close: null, ranged: null, siege: null });
 function newGame(fp, fe) {
   const st = {
     round: 1, lives: { p: 2, e: 2 },
+    oppName: NAMES[fe][Math.floor(Math.random() * NAMES[fe].length)],
     hands: { p: [], e: [] },
     faction: { p: fp, e: fe },
     deck: { p: shuffle(makePool(fp)), e: shuffle(makePool(fe)) },
@@ -251,7 +266,7 @@ function play(st, side, id, arg) {
   const hand = st.hands[side];
   const card = hand.splice(hand.findIndex(x => x.id === id), 1)[0];
   const opp = side === 'p' ? 'e' : 'p';
-  const who = side === 'p' ? 'Vous jouez' : 'L’adversaire joue';
+  const who = side === 'p' ? 'Vous jouez' : OPP_SUJ() + ' joue';
   let msg = `${who} ${card.name}.`;
   if (card.kind === 'unit') {
     if (card.agile && arg) card.row = arg;
@@ -620,7 +635,7 @@ function focusTurn() {
 }
 
 function render() {
-  $('hud').innerHTML = plHtml('e', 'Adversaire') + plHtml('p', 'Vous');
+  $('hud').innerHTML = plHtml('e', OPP_NAME()) + plHtml('p', 'Vous');
   $('side-e').innerHTML = ROW_ORDER.e.map(r => rowHtml('e', r)).join('');
   $('side-p').innerHTML = ROW_ORDER.p.map(r => rowHtml('p', r)).join('');
   const wxNames = { close: 'Gel mordant', ranged: 'Brouillard épais', siege: 'Pluie torrentielle' };
@@ -641,7 +656,7 @@ function render() {
   if (selEl) selEl.scrollIntoView({ block: 'nearest', inline: 'nearest' });
   $('b-pass').disabled = !mine;
   const sc = selCard();
-  const turnTxt = G.over ? '' : mine ? '<b>À vous de jouer</b>' : '<b>À l’adversaire de jouer</b>';
+  const turnTxt = G.over ? '' : mine ? '<b>À vous de jouer</b>' : `<b>À ${OPP_DE()} de jouer</b>`;
   const hintAct = !mine || G.over ? '' :
     sc && sc.kind === 'horn' ? 'Touchez le Cor d’une de vos rangées pour doubler sa force. Touchez ailleurs pour annuler.' :
     sc && sc.kind === 'decoy' ? 'Touchez une de vos unités sur le plateau : elle retourne dans votre main. Touchez ailleurs pour annuler.' :
@@ -714,7 +729,7 @@ function afterAction() {
   s.pendingAfter = false;
   for (const sd of ['p', 'e']) if (!s.passed[sd] && !s.hands[sd].length) {
     s.passed[sd] = true;
-    pushLog(sd === 'p' ? 'Vous n’avez plus de cartes : vous passez.' : 'L’adversaire n’a plus de cartes et passe.');
+    pushLog(sd === 'p' ? 'Vous n’avez plus de cartes : vous passez.' : OPP_SUJ() + ' n’a plus de cartes et passe.');
   }
   if (s.passed.p && s.passed.e) { render(); return finishRound(); }
   const other = s.turn === 'p' ? 'e' : 'p';
@@ -735,7 +750,7 @@ function aiMove() {
     const g0 = G;
     setTimeout(() => { if (G === g0) afterAction(); }, 2200);
   } else {
-    G.passed.e = true; pushLog('L’adversaire passe.');
+    G.passed.e = true; pushLog(OPP_SUJ() + ' passe.');
     afterAction();
   }
 }
@@ -744,16 +759,16 @@ function finishRound() {
   let rec;
   if (G.roundPending) rec = G.history[G.history.length - 1];
   else { rec = scoreRound(G); G.roundPending = true; }
-  const res = rec.tp === rec.te && rec.w ? 'Égalité : Nilfgaard remporte la manche.' : rec.w === 'p' ? 'Vous remportez la manche.' : rec.w === 'e' ? 'L’adversaire remporte la manche.' : 'Égalité : chacun perd une vie.';
+  const res = rec.tp === rec.te && rec.w ? 'Égalité : Nilfgaard remporte la manche.' : rec.w === 'p' ? 'Vous remportez la manche.' : rec.w === 'e' ? OPP_SUJ() + ' remporte la manche.' : 'Égalité : chacun perd une vie.';
   render();
-  showModal(`<h2>Manche ${rec.n}</h2><p class="score">${rec.tp} — ${rec.te}</p><p>${res}${rec.w && G.faction[rec.w] === 'nord' ? ' Royaumes du Nord : une carte est piochée.' : ''}</p><button class="btn primary" id="m-ok">Continuer</button>`);
+  showModal(`<h2>Manche ${rec.n}</h2><p class="score">${rec.te} — ${rec.tp}</p><p>${res}${rec.w && G.faction[rec.w] === 'nord' ? ' Royaumes du Nord : une carte est piochée.' : ''}</p><button class="btn primary" id="m-ok">Continuer</button>`);
   $('m-ok').onclick = () => {
     clearRound(G, rec.w);
     G.roundPending = false;
     sel = null;
     if (G.over) {
       const t = G.winner === 'p' ? 'Victoire !' : G.winner === 'e' ? 'Défaite' : 'Égalité';
-      const d = G.history.map(h => `Manche ${h.n} : ${h.tp} — ${h.te}`).join('<br>');
+      const d = G.history.map(h => `Manche ${h.n} : ${h.te} — ${h.tp}`).join('<br>');
       showModal(`<h2>${t}</h2><p>${d}</p><button class="btn primary" id="m-new">Rejouer</button>`);
       $('m-new').onclick = restart;
       render();
@@ -872,7 +887,7 @@ let mullSel = [];
 function intro() {
   mullSel = [];
   const hand = G.hands.p.map(c => cardHtml(c, symOf(c), 'big', `data-mull="${c.id}"`)).join('');
-  showModal(`${RULES}<p>${G.starter === 'p' ? 'Vous commencez.' : 'L’adversaire commence.'}</p>` +
+  showModal(`${RULES}<p>${G.starter === 'p' ? 'Vous commencez.' : OPP_SUJ() + ' commence.'}</p>` +
     `<p>Relance : touchez jusqu’à deux cartes à changer, puis commencez.</p><div class="mull">${hand}</div>` +
     `<button class="btn primary" id="m-go">Commencer</button>`);
   $('m-go').onclick = () => {
@@ -955,6 +970,16 @@ $('modal').addEventListener('click', e => {
   }
 });
 $('b-new').onclick = () => { if (inGame && !G.over && !modalOpen) askQuit(restart); else restart(); };
+$('b-opt').onclick = () => {
+  if (modalOpen) return;
+  showModal(`<h2>Options</h2><label class="opt"><input type="checkbox" id="o-names" ${namesOn ? 'checked' : ''}> Nom de l’adversaire</label><button class="btn primary" id="m-close">Fermer</button>`);
+  $('o-names').onchange = e => {
+    namesOn = e.target.checked;
+    try { localStorage.setItem('gwent-names', namesOn ? '1' : '0'); } catch (err) {}
+    render();
+  };
+  $('m-close').onclick = () => { hideModal(); render(); if (G.turn === 'e' && !G.over) setTimeout(aiMove, 700); };
+};
 $('b-rules').onclick = () => {
   if (modalOpen) return;
   showModal(`${RULES}<button class="btn primary" id="m-close">Fermer</button>`);
