@@ -1,0 +1,17 @@
+{
+  "name": "Yen4Ever",
+  "short_name": "Yen4Ever",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#15110e",
+  "theme_color": "#d1a84e",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
