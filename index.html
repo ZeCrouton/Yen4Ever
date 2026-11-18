@@ -91,6 +91,8 @@ h2{font:700 20px var(--f-display);letter-spacing:.06em;color:var(--gold);margin:
 .hsc .p{color:#5fb85f}
 .handrow.zoom{padding-top:130px;padding-left:max(40px,env(safe-area-inset-left,0px));padding-right:max(40px,env(safe-area-inset-right,0px))}
 .hand.off .card{opacity:.55;cursor:not-allowed}
+/* PC uniquement : main centrée et carte agrandie de 20 % de plus (1.87 × 1.2 = 2.24) */
+@media (min-width:900px) and (pointer:fine){.handrow{justify-content:center}.hand .card.sel{transform:scale(2.24)}}
 .grp{border-top:1px solid var(--line);padding:6px 0}
 .grp summary{cursor:pointer;font:700 14px var(--f-display);letter-spacing:.04em;color:var(--gold);padding:6px 2px;list-style:none}
 .grp summary::-webkit-details-marker{display:none}
@@ -124,8 +126,15 @@ h2{font:700 20px var(--f-display);letter-spacing:.06em;color:var(--gold);margin:
 .mull .card.sel{border-color:var(--gold);transform:translateY(-6px);box-shadow:0 0 0 2px var(--gold)}
 .wxbar{text-align:center;font:600 12px var(--f-display);letter-spacing:.08em;color:var(--mute);padding:2px 0}
 .wxbar b{color:var(--frost)}
-.log{min-height:60px;background:var(--panel);border-left:3px solid var(--gold);padding:8px 10px;font-size:14px;display:flex;flex-direction:column;gap:2px}
+.log{min-height:60px;max-height:120px;overflow-y:auto;background:var(--panel);border-left:3px solid var(--gold);padding:8px 10px;font-size:14px;display:flex;flex-direction:column;gap:2px}
 .log span:not(:last-child){color:var(--mute)}
+.log b,.hsc .la b{color:var(--bone);font-weight:700}
+.fld{display:flex;flex-direction:column;gap:6px;font-size:15px}
+.fld input{padding:8px;font:inherit;border:1px solid var(--line);background:var(--panel2);color:var(--bone);border-radius:3px}
+.diff{border:1px solid var(--line);padding:8px 12px;display:flex;flex-direction:column;gap:6px;margin:0}
+.grp textarea{width:100%;font:12px/1.3 monospace;background:var(--panel2);color:var(--bone);border:1px solid var(--line);border-radius:3px;margin:6px 0;box-sizing:border-box}
+.rwd{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.rwdc{display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;font-size:13px}
 .ctl{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .tools{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap}
 .hint{font-size:13px;color:var(--gold);min-width:0}
@@ -166,6 +175,66 @@ const NAMES = {
 };
 let namesOn = true;
 try { namesOn = localStorage.getItem('gwent-names') !== '0'; } catch (e) {}
+/* Nom libre saisi dans les Options : on retire les caractères HTML pour l'afficher sans risque */
+const cleanName = s => String(s || '').replace(/<[^>]*>/g, '').replace(/[<>&"]/g, '').replace(/\s+/g, ' ').trim().slice(0, 24);
+let oppCustom = '';
+try { oppCustom = cleanName(localStorage.getItem('gwent-nom')); } catch (e) {}
+const DIFFS = [['facile', 'Facile'], ['normal', 'Normal'], ['difficile', 'Difficile']];
+let diff = 'normal';
+try { const d = localStorage.getItem('gwent-diff'); if (DIFFS.some(x => x[0] === d)) diff = d; } catch (e) {}
+const clone = o => JSON.parse(JSON.stringify(o));
+/* Journal : les noms (« Vous » et l'adversaire) sont mis en gras */
+function hl(s) {
+  let t = String(s);
+  for (const n of ['Vous', oppOn()].filter(Boolean)) t = t.split(n).join(`<b>${n}</b>`);
+  return t;
+}
+
+/* ===== Progression : profil séparé de la partie en cours ===== */
+/* Catalogue des cartes (une seule fois, sans consommer d'identifiants) */
+const LIB = (() => {
+  const u = UID, seen = new Set(), l = [];
+  for (const { id, ...c } of makePool('skellige')) if (!seen.has(c.name)) { seen.add(c.name); l.push(c); }
+  UID = u;
+  return l;
+})();
+/* Cartes pouvant être gagnées : pas de Héros, pas de Mardroeme (réservé aux Berserkers) */
+const REWARD_POOL = LIB.filter(c => !c.hero && c.kind !== 'mardroeme');
+const PROFILE_KEY = 'gwent-profil';
+let profile = { v: 1, wins: 0, matches: 0, pending: 0, collection: [] };
+function sanitizeProfile(d) {
+  const ok = new Set(REWARD_POOL.map(c => c.name));
+  const n = x => Math.max(0, Math.floor(+x || 0));
+  const matches = n(d.matches), wins = Math.min(n(d.wins), matches);
+  return {
+    v: 1, matches, wins, pending: Math.min(n(d.pending), 20),
+    collection: (Array.isArray(d.collection) ? d.collection : []).filter(x => ok.has(x)).slice(0, 300)
+  };
+}
+function loadProfile() {
+  try {
+    const d = JSON.parse(localStorage.getItem(PROFILE_KEY) || 'null');
+    if (d && d.v === 1) profile = sanitizeProfile(d);
+  } catch (e) {}
+}
+function saveProfile() { try { localStorage.setItem(PROFILE_KEY, JSON.stringify(profile)); } catch (e) {} }
+/* Cartes gagnées, ajoutées au deck du joueur à chaque nouvelle partie */
+function profileCards() {
+  return profile.collection.map(n => LIB.find(c => c.name === n)).filter(Boolean).map(c => ({ ...c, id: UID++ }));
+}
+function mergeProfiles(a, b) {
+  return sanitizeProfile({
+    matches: Math.max(a.matches, b.matches), wins: Math.max(a.wins, b.wins), pending: Math.max(a.pending, b.pending),
+    collection: a.collection.length >= b.collection.length ? a.collection : b.collection
+  });
+}
+function encodeProfile() { return btoa(unescape(encodeURIComponent(JSON.stringify(profile)))); }
+function decodeProfile(code) {
+  const d = JSON.parse(decodeURIComponent(escape(atob(String(code).trim()))));
+  if (!d || d.v !== 1) throw new Error('format');
+  return sanitizeProfile(d);
+}
+loadProfile();
 const oppOn = () => (namesOn && G && G.oppName) || null;
 const OPP_NAME = () => oppOn() || 'Adversaire';
 const OPP_SUJ = () => oppOn() || 'L’adversaire';
@@ -226,10 +295,10 @@ const emptyHorn = () => ({ close: null, ranged: null, siege: null });
 function newGame(fp, fe) {
   const st = {
     round: 1, lives: { p: 2, e: 2 },
-    oppName: NAMES[fe][Math.floor(Math.random() * NAMES[fe].length)],
+    oppName: cleanName(oppCustom) || NAMES[fe][Math.floor(Math.random() * NAMES[fe].length)],
     hands: { p: [], e: [] },
     faction: { p: fp, e: fe },
-    deck: { p: shuffle(makePool(fp)), e: shuffle(makePool(fe)) },
+    deck: { p: shuffle([...makePool(fp), ...profileCards()]), e: shuffle(makePool(fe)) },
     board: { p: emptyRows(), e: emptyRows() },
     horn: { p: emptyHorn(), e: emptyHorn() },
     grave: { p: [], e: [] },
@@ -412,12 +481,23 @@ function aiChoose(st) {
   const pPassed = st.passed.p;
   if (pPassed && d0 > 0) return null;
   const early = st.lives.e === 2 && st.lives.p === 2 && st.hands.e.length >= 6;
-  if (!pPassed && d0 >= (early ? 12 : 20)) return null;
+  const passAt = diff === 'facile' ? 40 : early ? 12 : 20;
+  if (!pPassed && d0 >= passAt) return null;
+  /* Facile : une fois sur trois, il joue au hasard */
+  if (diff === 'facile' && Math.random() < 0.75) return A[Math.floor(Math.random() * A.length)];
   let best = null, bs = -1e9;
   for (const a of A) {
-    const t = JSON.parse(JSON.stringify(st));
+    const t = clone(st);
     play(t, 'e', a.id, a.arg);
-    const d = total(t, 'e') - total(t, 'p');
+    let d = total(t, 'e') - total(t, 'p');
+    /* Difficile : on retient la meilleure réponse possible du joueur (cas le plus défavorable pour l'IA) */
+    if (diff === 'difficile' && !t.passed.p) {
+      for (const b of actions(t, 'p')) {
+        const u = clone(t);
+        play(u, 'p', b.id, b.arg);
+        d = Math.min(d, total(u, 'e') - total(u, 'p'));
+      }
+    }
     const gain = d - d0;
     const cost = (a.card.kind === 'unit' ? a.card.str : 4) * (a.card.hero ? 1.2 : 0.5);
     let sc;
@@ -653,13 +733,16 @@ function render() {
   const wxNames = { close: 'Gel mordant', ranged: 'Brouillard épais', siege: 'Pluie torrentielle' };
   const act = ROWS.filter(r => G.weather[r]).map(r => `<b>${wxNames[r]}</b>`).join(' · ');
   $('wx').innerHTML = `Manche ${Math.min(G.round, 3)} · ${act || 'Ciel dégagé'}`;
-  $('log').innerHTML = (G.logs.length ? G.logs : ['À vous de jouer.']).map(l => `<span>${l}</span>`).join('');
+  const lg = $('log');
+  const atBottom = lg.scrollHeight - lg.scrollTop - lg.clientHeight < 24;
+  lg.innerHTML = (G.logs.length ? G.logs : ['À vous de jouer.']).map(l => `<span>${hl(l)}</span>`).join('');
+  if (atBottom) lg.scrollTop = lg.scrollHeight;
   const mine = G.turn === 'p' && !G.over && !modalOpen;
   $('hand').className = 'hand' + (mine ? '' : ' off');
   const shown = selCard();
   const oldRow = $('hand').querySelector('.handrow');
   const keepLeft = oldRow ? oldRow.scrollLeft : 0;
-  $('hand').innerHTML = `<div class="hsc"><span class="e">${OPP_NAME()} ${total(G, 'e')}</span> — <span class="p">${total(G, 'p')} Vous</span><span class="la">${G.logs.length ? G.logs[G.logs.length - 1] : ''}</span></div><div class="handrow${sel ? ' zoom' : ''}">${G.hands.p.map(c =>
+  $('hand').innerHTML = `<div class="hsc"><span class="e">${OPP_NAME()} ${total(G, 'e')}</span> — <span class="p">${total(G, 'p')} Vous</span><span class="la">${G.logs.length ? hl(G.logs[G.logs.length - 1]) : ''}</span></div><div class="handrow${sel ? ' zoom' : ''}">${G.hands.p.map(c =>
     cardHtml(c, symOf(c), 'big' + (c.id === sel ? ' sel' : ''), `data-hand="${c.id}"`)).join('') || '<span class="sm">Plus de cartes.</span>'}</div>` +
     `<div class="cardinfo">${shown ? cardInfo(shown) : ''}</div>`;
   const newRow = $('hand').querySelector('.handrow');
@@ -697,6 +780,7 @@ function loadGame() {
     G = d.G; UID = d.UID; inGame = true; viewTurn = d.viewTurn; sel = null; modalOpen = false;
     hideModal();
     render();
+    startMusic();
     if (G.passed.p && G.passed.e) finishRound();
     else if (G.pendingAfter) afterAction();
     else if (G.turn === 'e') setTimeout(aiMove, 700);
@@ -704,7 +788,7 @@ function loadGame() {
   } catch (e) { return false; }
 }
 
-function pushLog(m) { G.logs.push(m); if (G.logs.length > 3) G.logs.shift(); }
+function pushLog(m) { G.logs.push(m); }
 
 function showModal(html) {
   modalOpen = true;
@@ -767,6 +851,26 @@ function aiMove() {
   }
 }
 
+/* Victoire : enregistrée tout de suite ; la récompense reste due tant qu'elle n'est pas choisie */
+function recordMatch(w) {
+  profile.matches++;
+  if (w === 'p') { profile.wins++; profile.pending++; }
+  saveProfile();
+}
+function showReward(then) {
+  const pool = [...REWARD_POOL], opts = [];
+  while (opts.length < 3 && pool.length) opts.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
+  showModal(`<h2>Récompense</h2><p>Choisissez une carte à ajouter à votre collection.</p><div class="rwd">` +
+    opts.map((c, i) => `<div class="rwdc" data-rw="${i}">${cardHtml(c, symOf(c), '')}<span>${c.name}</span></div>`).join('') + `</div>`);
+  document.querySelectorAll('[data-rw]').forEach(el => el.onclick = () => {
+    profile.collection.push(opts[+el.dataset.rw].name);
+    profile.pending = Math.max(0, profile.pending - 1);
+    saveProfile();
+    hideModal();
+    then();
+  });
+}
+
 function finishRound() {
   let rec;
   if (G.roundPending) rec = G.history[G.history.length - 1];
@@ -779,11 +883,15 @@ function finishRound() {
     G.roundPending = false;
     sel = null;
     if (G.over) {
-      const t = G.winner === 'p' ? 'Victoire !' : G.winner === 'e' ? 'Défaite' : 'Égalité';
-      const d = G.history.map(h => `Manche ${h.n} : ${h.te} — ${h.tp}`).join('<br>');
-      showModal(`<h2>${t}</h2><p>${d}</p><button class="btn primary" id="m-new">Rejouer</button>`);
-      $('m-new').onclick = restart;
-      render();
+      recordMatch(G.winner);
+      const finish = () => {
+        const t = G.winner === 'p' ? 'Victoire !' : G.winner === 'e' ? 'Défaite' : 'Égalité';
+        const d = G.history.map(h => `Manche ${h.n} : ${h.te} — ${h.tp}`).join('<br>');
+        showModal(`<h2>${t}</h2><p>${d}</p><button class="btn primary" id="m-new">Rejouer</button>`);
+        $('m-new').onclick = restart;
+        render();
+      };
+      if (profile.pending > 0) showReward(finish); else finish();
     } else {
       hideModal(); render();
       if (G.turn === 'e') setTimeout(aiMove, 700);
@@ -918,7 +1026,9 @@ function intro() {
 }
 
 function factionPick() {
-  showModal(`<h2>Choisissez votre faction</h2><div class="fac">${Object.keys(FAC).map(k => `<button class="btn" data-fac="${k}"><b>${FAC[k]}</b><br><small>${FAC_TXT[k]}</small></button>`).join('')}</div>`);
+  if (profile.pending > 0) return showReward(factionPick);
+  showModal(`<h2>Choisissez votre faction</h2><div class="fac">${Object.keys(FAC).map(k => `<button class="btn" data-fac="${k}"><b>${FAC[k]}</b><br><small>${FAC_TXT[k]}</small></button>`).join('')}</div>` +
+    `<p class="hint">Victoires : ${profile.wins} / parties : ${profile.matches} · Cartes débloquées : ${profile.collection.length}</p>`);
   render();
 }
 function restart() { hideModal(); factionPick(); }
@@ -996,16 +1106,49 @@ $('b-full').onclick = () => {
 document.addEventListener('fullscreenchange', paintFull);
 document.addEventListener('webkitfullscreenchange', paintFull);
 paintFull();
-$('b-opt').onclick = () => {
+function openOptions() {
   if (modalOpen) return;
-  showModal(`<h2>Options</h2><label class="opt"><input type="checkbox" id="o-names" ${namesOn ? 'checked' : ''}> Nom de l’adversaire</label><button class="btn primary" id="m-close">Fermer</button>`);
+  showModal(`<h2>Options</h2>` +
+    `<label class="opt"><input type="checkbox" id="o-names" ${namesOn ? 'checked' : ''}> Afficher le nom de l’adversaire</label>` +
+    `<label class="fld">Nom de l’adversaire<input type="text" id="o-nom" maxlength="24" placeholder="Aléatoire" value="${oppCustom}"></label>` +
+    `<fieldset class="diff"><legend>Difficulté</legend>` +
+    DIFFS.map(([k, l]) => `<label class="opt"><input type="radio" name="o-diff" value="${k}" ${diff === k ? 'checked' : ''}> ${l}</label>`).join('') +
+    `</fieldset>` +
+    `<details class="grp"><summary>Progression</summary><div class="grpbody">` +
+    `<p>Victoires : ${profile.wins} / parties : ${profile.matches} · Cartes débloquées : ${profile.collection.length}</p>` +
+    `<p>Votre progression est enregistrée sur cet appareil. Copiez le code pour la conserver ou la transférer.</p>` +
+    `<textarea id="o-code" rows="3" readonly>${encodeProfile()}</textarea>` +
+    `<textarea id="o-imp" rows="2" placeholder="Collez ici un code de sauvegarde"></textarea>` +
+    `<button class="btn" id="o-import">Importer</button> <span class="hint" id="o-msg"></span>` +
+    `</div></details>` +
+    `<button class="btn primary" id="m-close">Fermer</button>`);
   $('o-names').onchange = e => {
     namesOn = e.target.checked;
     try { localStorage.setItem('gwent-names', namesOn ? '1' : '0'); } catch (err) {}
     render();
   };
+  $('o-nom').onchange = e => {
+    oppCustom = cleanName(e.target.value);
+    e.target.value = oppCustom;
+    try { localStorage.setItem('gwent-nom', oppCustom); } catch (err) {}
+    if (G && !G.over && oppCustom) G.oppName = oppCustom;
+    render();
+  };
+  document.querySelectorAll('input[name="o-diff"]').forEach(r => r.onchange = e => {
+    diff = e.target.value;
+    try { localStorage.setItem('gwent-diff', diff); } catch (err) {}
+  });
+  $('o-import').onclick = () => {
+    try {
+      profile = mergeProfiles(profile, decodeProfile($('o-imp').value));
+      saveProfile();
+      hideModal();
+      openOptions();
+    } catch (err) { $('o-msg').textContent = 'Code invalide.'; }
+  };
   $('m-close').onclick = () => { hideModal(); render(); if (G.turn === 'e' && !G.over) setTimeout(aiMove, 700); };
-};
+}
+$('b-opt').onclick = openOptions;
 $('b-rules').onclick = () => {
   if (modalOpen) return;
   showModal(`${RULES}<button class="btn primary" id="m-close">Fermer</button>`);
@@ -1029,7 +1172,17 @@ function startMusic() {
   if (muted) return;
   if (!bgm.getAttribute('src')) bgm.src = TRACKS[trackIdx];
   const r = bgm.play();
-  if (r && r.catch) r.catch(() => {});
+  if (r && r.catch) r.catch(() => armMusicOnGesture());
+}
+/* Le navigateur bloque parfois la lecture sans geste de l'utilisateur : on démarre au premier clic ou touche */
+function armMusicOnGesture() {
+  const go = () => {
+    document.removeEventListener('pointerdown', go);
+    document.removeEventListener('keydown', go);
+    if (!muted && bgm.paused) startMusic();
+  };
+  document.addEventListener('pointerdown', go);
+  document.addEventListener('keydown', go);
 }
 bgm.addEventListener('ended', () => {
   trackIdx = (trackIdx + 1) % TRACKS.length;
