@@ -768,7 +768,9 @@ function render() {
     sc && sc.agile ? 'Touchez la rangée Mêlée ou Distance pour la poser. Touchez ailleurs pour annuler.' :
     sc ? 'Touchez la carte agrandie pour la jouer. Touchez ailleurs pour annuler.' : 'Touchez une carte de votre main pour l’agrandir.';
   $('hint').innerHTML = [turnTxt, hintAct].filter(Boolean).join(' · ');
-  if (viewTurn !== G.turn && !G.over && !modalOpen) { viewTurn = G.turn; focusTurn(); }
+  /* Recentrage à chaque début de tour (nouvelle manche, après un modal, adversaire qui a passé…), pas seulement quand le tour change de camp */
+  const vk = G.turn + '|' + G.round + '|' + G.logs.length;
+  if (viewTurn !== vk && !G.over && !modalOpen) { viewTurn = vk; focusTurn(); }
   persist();
 }
 
