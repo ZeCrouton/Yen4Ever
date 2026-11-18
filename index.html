@@ -723,7 +723,16 @@ $('inspect').addEventListener('click', () => { $('inspect').hidden = true; });
 let viewTurn = null;
 function focusTurn() {
   const el = $(G.turn === 'p' ? 'side-p' : 'side-e');
-  if (el && !G.over) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  if (!el || G.over) return;
+  /* Comme DBZ4Ever : on réserve la hauteur de la main, puis on vérifie que le plateau n'est pas caché dessous */
+  const d = $('hand');
+  if (d && d.offsetHeight) document.body.style.paddingBottom = 'calc(' + (d.offsetHeight + 16) + 'px + env(safe-area-inset-bottom,0px))';
+  el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  setTimeout(() => {
+    const limite = window.innerHeight - (d ? d.offsetHeight : 0) - 8;
+    const bas = el.getBoundingClientRect().bottom;
+    if (bas > limite) window.scrollBy({ top: bas - limite, behavior: 'smooth' });
+  }, 450);
 }
 
 function render() {
